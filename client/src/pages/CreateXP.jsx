@@ -2,11 +2,12 @@ import { Link } from "react-router-dom";
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 
+
 export default function CreateXP(){
   const [formData, setFormData] = useState({
     name: "",
     email: "",
-    institutename: "",
+    institute: "",
     password: "",
     username: "",
     mobile: "",
@@ -26,6 +27,9 @@ export default function CreateXP(){
         method: "POST",
         headers: {
           "Content-Type": "application/json",
+          
+          
+
         },
         body: JSON.stringify(formData),
       });
@@ -43,6 +47,7 @@ export default function CreateXP(){
     return(
 <>
 <section className=" h-screen">
+
     <main className="flex flex-row h-auto mt-3">
         
         <div className="ml-auto mr-auto mt-5 mb-5 h-auto flex flex-col gap-2 border-2 border-gray-500 p-10 rounded-[4px]">
@@ -72,13 +77,13 @@ export default function CreateXP(){
             </input>
 
             <input 
-            name="institutename"
+            name="institute"
             type="text"
             placeholder="Institute Name"
             className="w-full p-2 border rounded-xs focus:outline-none focus:ring-2 focus:ring-blue-500"
             
             onChange={handleChange}
-            value={formData.institutename} 
+            value={formData.institute} 
             >
             </input>
 
@@ -140,5 +145,4 @@ export default function CreateXP(){
 </>
 
     );
-
 }

@@ -12,9 +12,11 @@ export default function LoginXP() {
         setError(""); // Clear previous errors
 
         try {
-            const response = await fetch("http://localhost:3000/api/LoginXP", {  // Change to /auth if you renamed it
+            const response = await fetch("http://localhost:3000/api/login", {  // Change to /auth if you renamed it
                 method: "POST",
-                headers: { "Content-Type": "application/json" },
+                headers: { "Content-Type": "application/json",
+                 },
+                
                 body: JSON.stringify({ email, password }),
             });
 
@@ -24,8 +26,12 @@ export default function LoginXP() {
                 throw new Error(data.message || "Login failed");
             }
 
-            localStorage.setItem("token", data.token);  // Store token in localStorage
-            navigate("/");  // Redirect user to another page (e.g., Dashboard)
+             // Store token and user data in localStorage
+             localStorage.setItem("token", data.token); // Store token in localStorage
+             localStorage.setItem("userId", data.user.id); // Store user ID in localStorage
+ 
+             // Redirect user to their home page
+             navigate(`/Home/${data.user.id}`); // Dynamically navigate to the user's home page
         } catch (error) {
             setError(error.message);
         }
