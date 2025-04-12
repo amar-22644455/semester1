@@ -1,0 +1,162 @@
+/* General Styles */
+body {
+  margin: 0;
+  font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+  color: #f9f9f9;
+  background: linear-gradient(135deg, #1a1a1a, #000); /* Gradient background */
+  min-height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+}
+
+.sharexp-container {
+  width: 100%;
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 40px 20px; /* Increased padding */
+  box-sizing: border-box;
+}
+
+/* Header Section */
+.sharexp-header {
+  margin-bottom: 60px; /* Increased spacing */
+}
+
+.sharexp-title {
+  font-size: 3.5rem; /* Larger font size */
+  color: #4a90e2;
+  margin: 0;
+  animation: glow 2s infinite alternate;
+}
+
+@keyframes glow {
+  0% {
+    text-shadow: 0 0 10px #4a90e2, 0 0 20px #4a90e2;
+  }
+  100% {
+    text-shadow: 0 0 20px #4a90e2, 0 0 40px #4a90e2;
+  }
+}
+
+.sharexp-tagline {
+  font-size: 1.4rem; /* Larger font size */
+  color: #bbb;
+  margin-top: 15px; /* Increased spacing */
+}
+
+/* Frameset Section */
+.frameset {
+  display: flex;
+  justify-content: center;
+  gap: 80px; /* Increased spacing between frames */
+  flex-wrap: wrap;
+  margin-bottom: 60px; /* Increased spacing */
+}
+
+.frame {
+  position: relative;
+  width: 220px; /* Slightly larger frames */
+  height: 220px;
+  overflow: hidden;
+  border-radius: 15px;
+  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.3);
+  transition: transform 0.3s ease, box-shadow 0.3s ease;
+}
+
+.frame:hover {
+  transform: scale(1.05);
+  box-shadow: 0 8px 25px rgba(74, 144, 226, 0.6);
+}
+
+.frame-image.small-image {
+  width: 100%;
+  height: 100%;
+  object-fit: cover; /* Ensures the image covers the entire frame */
+  border-radius: 15px;
+}
+
+.frame-overlay {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  background-color: rgba(0, 0, 0, 0.7);
+  color: #fff;
+  padding: 15px; /* Increased padding */
+  border-radius: 0 0 15px 15px;
+  text-align: center;
+}
+
+/* Description Section */
+.sharexp-description {
+  max-width: 800px;
+  margin: 0 auto 60px; /* Increased spacing */
+}
+
+.sharexp-description p {
+  color: #ddd;
+  line-height: 1.8; /* Increased line height for better readability */
+  font-size: 1.2rem; /* Larger font size */
+}
+
+/* Call-to-Action Section */
+.sharexp-cta {
+  margin-bottom: 60px; /* Increased spacing */
+}
+
+.cta-button {
+  background-color: #4a90e2;
+  color: white;
+  padding: 15px 40px; /* Larger button */
+  border: none;
+  border-radius: 30px; /* Rounded corners */
+  font-size: 1.2rem; /* Larger font size */
+  cursor: pointer;
+  transition: background-color 0.3s ease, transform 0.3s ease;
+}
+
+.cta-button:hover {
+  background-color: #357abd;
+  transform: scale(1.05);
+}
+
+.cta-subtext {
+  color: #bbb;
+  margin-top: 15px; /* Increased spacing */
+  font-size: 1rem; /* Larger font size */
+}
+
+/* Benefits Section */
+.sharexp-benefits {
+  max-width: 800px;
+  margin: 0 auto;
+}
+
+.sharexp-benefits h2 {
+  font-size: 2.2rem; /* Larger font size */
+  color: #4a90e2;
+  margin-bottom: 30px; /* Increased spacing */
+}
+
+.sharexp-benefits ul {
+  list-style: none;
+  padding: 0;
+}
+
+.sharexp-benefits li {
+  font-size: 1.2rem; /* Larger font size */
+  color: #ddd;
+  margin: 15px 0; /* Increased spacing */
+}
+
+/* Footer Section */
+.sharexp-footer {
+  margin-top: 5px; /* Increased spacing */
+  color: #bbb;
+  font-size: 1rem; /* Larger font size */
+}

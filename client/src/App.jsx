@@ -1,4 +1,5 @@
 import { BrowserRouter as Router, Route, Routes } from "react-router-dom";
+import ShareXP from './pages/ShareXP';
 import Home from "./pages/Home";
 import Auth from "./pages/Auth";
 import Profile from "./pages/Profile";
@@ -15,6 +16,7 @@ export default function App() {
     <Router>
       
       <Routes>  
+        <Route path="/" element={<ShareXP />} />
         <Route path="/Home/:id" element={<Home />} />
         <Route path="/profile/:id" element={<Profile />} />
         <Route path="/CreateXP" element={<CreateXP />} />
