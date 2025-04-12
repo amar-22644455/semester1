@@ -1,11 +1,22 @@
 import { Card, CardContent } from "@/components/ui/card";
 import Button from "@/components/ui/button";
-import { ThumbsUp, MessageCircle, Share2, MoreHorizontal, Send, ChevronDown, ChevronUp, Facebook, Instagram, Twitter, Linkedin, Mail } from "lucide-react";
+import {
+  ThumbsUp,
+  MessageCircle,
+  Share2,
+  Send,
+  ChevronDown,
+  ChevronUp,
+  Facebook,
+  Instagram,
+  Twitter,
+  Linkedin,
+  Mail
+} from "lucide-react";
 
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect } from "react";
 
 export default function PostCard({ post }) {
-  const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [showCommentInput, setShowCommentInput] = useState(false);
   const [showComments, setShowComments] = useState(false);
   const [comment, setComment] = useState("");
@@ -16,282 +27,170 @@ export default function PostCard({ post }) {
   const [currentUser, setCurrentUser] = useState(null);
   const [postOwner, setPostOwner] = useState(null);
 
-  if (!post) return null;
-
-
-  const checkLikeStatus = async (userId, postId) => {
-    try {
-      const response = await fetch(`http://localhost:3000/api/${postId}/like-status?userId=${userId}`, {
-        headers: {
-          'Authorization': `Bearer ${localStorage.getItem('token')}`
-        }
-      });
-      
-      if (response.ok) {
-        const data = await response.json();
-        setIsLiked(data.isLiked);
-        // Optional: Update like count if needed
-        if (data.likeCount !== undefined) {
-          setLikeCount(data.likeCount);
-        }
-      }
-    } catch (error) {
-      console.error('Error checking like status:', error);
-    }
-  };
-
-    useEffect(() => {
+  useEffect(() => {
+    const fetchInitialData = async () => {
       const userId = localStorage.getItem("userId");
-      if (userId) {
-        // Fetch complete user data
-    const fetchCurrentUser = async () => {
+      const token = localStorage.getItem("token");
+
+      if (!post?._id || !userId || !token) return;
+
       try {
-        const response = await fetch(`http://localhost:3000/api/users/${userId}`, {
-          headers: {
-            'Authorization': `Bearer ${localStorage.getItem('token')}`
-          }
+        const userRes = await fetch(`http://localhost:3000/api/users/${userId}`, {
+          headers: { Authorization: `Bearer ${token}` }
         });
-        
-        if (response.ok) {
-          const userData = await response.json();
+        if (userRes.ok) {
+          const userData = await userRes.json();
           setCurrentUser(userData);
         }
-      } catch (error) {
-        console.error('Error fetching current user:', error);
-      }
-    };
 
-        fetchCurrentUser();
-        checkLikeStatus(userId, post._id);
-      }
-
-      const fetchPostOwner = async () => {
-        try {
-          const response = await fetch(`http://localhost:3000/api/users/${post.userId}`, {
-            headers: {
-              'Authorization': `Bearer ${localStorage.getItem('token')}`
-            }
-          });
-          
-          if (response.ok) {
-            const userData = await response.json();
-            setPostOwner(userData);
+        const likeRes = await fetch(`http://localhost:3000/api/${post._id}/like-status?userId=${userId}`, {
+          headers: { Authorization: `Bearer ${token}` }
+        });
+        if (likeRes.ok) {
+          const likeData = await likeRes.json();
+          setIsLiked(likeData.isLiked);
+          if (likeData.likeCount !== undefined) {
+            setLikeCount(likeData.likeCount);
           }
-        } catch (error) {
-          console.error('Error fetching post owner:', error);
         }
-      };
 
-      if (post?.userId && !postOwner) {
-        fetchPostOwner();
-      }
-
-    }, [post?._id]);
-
-
-    const handlePostAction = async (actionType, data = {}) => {
-      if (!currentUser) {
-        console.error('User not logged in');
-        return null;
-      }
-  
-      try {
-        const response = await fetch('http://localhost:3000/api/actions', {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-            'Authorization': `Bearer ${localStorage.getItem('token')}`
-          },
-          body: JSON.stringify({
-            postId: post._id,
-            actionType,
-           
-            ...data
-          })
-        });
-  
-        if (!response.ok) {
-          throw new Error('Failed to perform action');
+        if (post?.userId) {
+          const ownerId = typeof post.userId === "object" ? post.userId._id : post.userId;
+          const ownerRes = await fetch(`http://localhost:3000/api/users/${ownerId}`, {
+             headers: { Authorization: `Bearer ${token}` }
+          });
+          if (ownerRes.ok) {
+            const ownerData = await ownerRes.json();
+            setPostOwner(ownerData);
+          }
         }
-  
-        return await response.json();
       } catch (error) {
-        console.error('Error performing action:', error);
-        return null;
+        console.error("Error fetching post data:", error);
       }
     };
 
+    fetchInitialData();
+  }, [post?._id, post?.userId]);
 
+  const handlePostAction = async (actionType, data = {}) => {
+    try {
+      const token = localStorage.getItem("token");
+      const response = await fetch('http://localhost:3000/api/actions', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${token}`
+        },
+        body: JSON.stringify({
+          postId: post._id,
+          actionType,
+          ...data
+        })
+      });
 
-    const handleCommentSubmit = async (e) => {
-      e.preventDefault();
-      if (comment.trim() && currentUser) {
-        const result = await handlePostAction('comment', { 
-          commentText: comment,
-          recipientId: post.userId // Assuming post has userId of the creator
-        });
-        
-        if (result && result.comment) {
-          // Use the comment data returned from the server
-          setComments([...comments, result.comment]);
-          setComment("");
-          setShowCommentInput(false);
-        }
-      }
-    };
-
-
-  const toggleComments = () => {
-    setShowComments(!showComments);
-    if (!showComments) {
-      setShowCommentInput(false);
+      if (!response.ok) throw new Error("Action failed");
+      return await response.json();
+    } catch (err) {
+      console.error("Post action error:", err);
+      return null;
     }
   };
 
   const handleLike = async () => {
     if (!currentUser) return;
-  
-    console.log('Before click - isLiked:', isLiked, 'likeCount:', likeCount);
-  
-    const previousLiked = isLiked;
-    const previousCount = likeCount;
-    const newLikeStatus = !isLiked;
-    setIsLiked(newLikeStatus);
-    setLikeCount(newLikeStatus ? likeCount + 1 : likeCount - 1);
-  
-    console.log('After optimistic update - isLiked:', newLikeStatus, 'likeCount:', newLikeStatus ? likeCount + 1 : likeCount - 1);
-  
-    const action = newLikeStatus ? 'like' : 'unlike';
-  
-    try {
-      const result = await handlePostAction(action, {
-        recipientId: post.userId
-      });
-      console.log('API result:', result);
-  
-      if (result) {
-        if (result.updatedLikeCount !== undefined) {
-          setLikeCount(result.updatedLikeCount);
-        }
-        if (result.isLiked !== undefined) {
-          setIsLiked(result.isLiked);
-        }
-      } else {
-        throw new Error('No result from server');
-      }
-    } catch (error) {
-      console.error('Error handling like action:', error);
-      setIsLiked(previousLiked);
-      setLikeCount(previousCount);
-      console.log('Reverted - isLiked:', previousLiked, 'likeCount:', previousCount);
+    const prevLiked = isLiked;
+    const prevCount = likeCount;
+
+    const newLiked = !prevLiked;
+    setIsLiked(newLiked);
+    setLikeCount(newLiked ? likeCount + 1 : likeCount - 1);
+
+    const action = newLiked ? "like" : "unlike";
+
+    const result = await handlePostAction(action, { recipientId: post.userId });
+    if (!result) {
+      setIsLiked(prevLiked);
+      setLikeCount(prevCount);
+    } else {
+      if (result.updatedLikeCount !== undefined) setLikeCount(result.updatedLikeCount);
+      if (result.isLiked !== undefined) setIsLiked(result.isLiked);
+    }
+  };
+
+  const handleCommentSubmit = async (e) => {
+    e.preventDefault();
+    if (!comment.trim()) return;
+
+    const result = await handlePostAction("comment", {
+      commentText: comment,
+      recipientId: post.userId
+    });
+
+    if (result?.comment) {
+      setComments(prev => [...prev, result.comment]);
+      setComment("");
+      setShowCommentInput(false);
     }
   };
 
   const handleShare = (platform) => {
     setShowShareMenu(false);
-    const postUrl = `http://localhost:3000/posts/${post.id}`; // Replace with your actual post URL
+    const postUrl = `http://localhost:3000/posts/${post._id}`;
     const text = `Check out this post: ${post.text}`;
-    
-    switch(platform) {
-      case 'whatsapp':
-        window.open(`https://wa.me/?text=${encodeURIComponent(text + ' ' + postUrl)}`, '_blank');
-        break;
-      case 'facebook':
-        window.open(`https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(postUrl)}`, '_blank');
-        break;
-      case 'twitter':
-        window.open(`https://twitter.com/intent/tweet?text=${encodeURIComponent(text)}&url=${encodeURIComponent(postUrl)}`, '_blank');
-        break;
-      case 'instagram':
-        // Instagram doesn't support direct sharing, this would open the app
-        window.open('instagram://', '_blank');
-        break;
-      case 'linkedin':
-        window.open(`https://www.linkedin.com/sharing/share-offsite/?url=${encodeURIComponent(postUrl)}`, '_blank');
-        break;
-      case 'email':
-        window.open(`mailto:?subject=${encodeURIComponent('Check out this post')}&body=${encodeURIComponent(text + '\n\n' + postUrl)}`, '_blank');
-        break;
-      default:
-        // Default share using Web Share API if available
-        if (navigator.share) {
-          navigator.share({
-            title: 'Check out this post',
-            text: text,
-            url: postUrl,
-          }).catch(err => console.log('Error sharing:', err));
-        } else {
-          // Fallback for browsers that don't support Web Share API
-          navigator.clipboard.writeText(postUrl).then(() => {
-            alert('Link copied to clipboard!');
-          });
-        }
+
+    const urlEncoded = encodeURIComponent(postUrl);
+    const textEncoded = encodeURIComponent(text);
+
+    const shareLinks = {
+      facebook: `https://www.facebook.com/sharer/sharer.php?u=${urlEncoded}`,
+      twitter: `https://twitter.com/intent/tweet?text=${textEncoded}&url=${urlEncoded}`,
+      linkedin: `https://www.linkedin.com/sharing/share-offsite/?url=${urlEncoded}`,
+      whatsapp: `https://wa.me/?text=${textEncoded}%20${urlEncoded}`,
+      email: `mailto:?subject=Check out this post&body=${textEncoded}%0A%0A${urlEncoded}`
+    };
+
+    if (platform === "instagram") {
+      alert("Instagram sharing is not supported via web.");
+    } else if (shareLinks[platform]) {
+      window.open(shareLinks[platform], "_blank");
+    } else if (navigator.share) {
+      navigator.share({
+        title: "Check out this post",
+        text,
+        url: postUrl
+      }).catch(err => console.error("Share failed:", err));
+    } else {
+      navigator.clipboard.writeText(postUrl).then(() => alert("Link copied to clipboard!"));
     }
   };
 
+  if (!post) return null;
+
   return (
-    <Card className="p-4 shadow-md rounded-1xl bg-black w-full text-white relative">
+    <Card className="p-4 shadow-md rounded-2xl bg-black w-full text-white">
       <CardContent className="flex flex-col gap-4">
-        {/* Profile and User Info with Menu Button */}
-        <div className="flex items-center justify-between">
-          <div className="flex items-center gap-3">
-            <img
-            src={postOwner?.profileImage 
-              ? postOwner.profileImage.startsWith('http') 
-                ? postOwner.profileImage 
-                : `http://localhost:3000${postOwner.profileImage}`
-              : null} 
-              alt="Profile"
-              className="h-10 w-10 w-auto rounded-full object-cover"
-            />
-            <div>
-              <h4 className="text-lg font-semibold">{post?.username || "User"}</h4>
-              <span className="text-xs text-gray-400">{new Date(post.createdAt).toLocaleTimeString()}</span>
-            </div>
-          </div>
-          
-          <div className="relative">
-            <button 
-              onClick={() => setIsMenuOpen(!isMenuOpen)}
-              className="p-1 rounded-full hover:bg-gray-800"
-            >
-              <MoreHorizontal className="w-5 h-5 text-gray-400" />
-            </button>
-            
-            {isMenuOpen && (
-              <div className="absolute right-0 mt-2 w-48 bg-gray-800 rounded-md shadow-lg z-10">
-                <div className="py-1">
-                  <button 
-                    className="block w-full text-left px-4 py-2 text-sm text-white hover:bg-gray-700"
-                    onClick={() => {
-                      setIsMenuOpen(false);
-                      setShowShareMenu(true);
-                    }}
-                  >
-                    Share
-                  </button>
-                  <button className="block w-full text-left px-4 py-2 text-sm text-white hover:bg-gray-700">
-                    Delete
-                  </button>
-                  <button className="block w-full text-left px-4 py-2 text-sm text-white hover:bg-gray-700">
-                    Report
-                  </button>
-                </div>
-              </div>
-            )}
+        <div className="flex items-center gap-3">
+          <img
+            src={postOwner?.profileImage?.startsWith("http")
+              ? postOwner.profileImage
+              : `http://localhost:3000${postOwner?.profileImage || ""}`}
+            alt="Profile"
+            className="h-10 w-10 rounded-full object-cover"
+          />
+          <div>
+            <h4 className="text-lg font-semibold">{post?.username || "User"}</h4>
+            <span className="text-xs text-gray-400">{new Date(post.createdAt).toLocaleTimeString()}</span>
           </div>
         </div>
 
-        {/* Post Content */}
-        <p className="text-gray-300">{post?.text || "Hello"}</p>
+        <p className="text-gray-300">{post?.text}</p>
 
-        {/* Post Media */}
-        {post?.media ? (
+        {post?.media && (
           post.media.fileType === "image" ? (
             <img
               src={`http://localhost:3000${post.media.url}`}
-              alt="Post Image"
-              className="h-auto w-auto rounded-xl object-cover"
+              alt="Post Media"
+              className="rounded-xl object-cover"
             />
           ) : post.media.fileType === "video" ? (
             <video controls className="rounded-xl max-h-80 object-cover">
@@ -308,58 +207,53 @@ export default function PostCard({ post }) {
               View Document
             </a>
           )
-        ) : null}
+        )}
 
-        {/* Like and Comment Count */}
-        {(likeCount > 0 || comments.length > 0) && (
-          <div className="flex items-center gap-4 text-sm text-gray-400 border-t border-gray-800 pt-2">
-            {likeCount > 0 && (
-              <div className="flex items-center">
-                <ThumbsUp className="w-4 h-4 text-blue-500" />
-                <span className="ml-1">{likeCount}</span>
-              </div>
-            )}
-            {comments.length > 0 && (
-              <div>
-                <span>{comments.length} {comments.length === 1 ? "comment" : "comments"}</span>
+        <div className="flex justify-around items-center border-t border-gray-800 pt-3 mt-2 flex-wrap gap-2">
+          <Button
+            variant="ghost"
+            className={`flex items-center gap-2 flex-1 justify-center ${isLiked ? '!text-blue-500 font-bold' : 'text-gray-400'}`}
+            onClick={handleLike}
+          >
+            <ThumbsUp className="w-5 h-5" />
+            <span>Like</span>
+            <span className="text-sm text-gray-400">({likeCount})</span>
+          </Button>
+
+          <Button
+            variant="ghost"
+            className="flex items-center gap-2 flex-1 justify-center text-gray-400"
+            onClick={() => {
+              setShowCommentInput(!showCommentInput);
+              setShowComments(true);
+            }}
+          >
+            <MessageCircle className="w-5 h-5 text-green-500" />
+            Comment
+          </Button>
+
+          <div className="relative flex-1">
+            <Button
+              variant="ghost"
+              className="flex items-center gap-2 justify-center text-gray-400 w-full"
+              onClick={() => setShowShareMenu(!showShareMenu)}
+            >
+              <Share2 className="w-5 h-5 text-yellow-500" />
+              Share
+            </Button>
+
+            {showShareMenu && (
+              <div className="absolute top-full mt-2 left-0 bg-gray-900 rounded-lg p-3 z-10 flex gap-3 shadow-lg">
+                <Facebook onClick={() => handleShare("facebook")} className="text-blue-600 cursor-pointer" />
+                <Twitter onClick={() => handleShare("twitter")} className="text-blue-400 cursor-pointer" />
+                <Instagram onClick={() => handleShare("instagram")} className="text-pink-500 cursor-pointer" />
+                <Linkedin onClick={() => handleShare("linkedin")} className="text-blue-700 cursor-pointer" />
+                <Mail onClick={() => handleShare("email")} className="text-gray-300 cursor-pointer" />
               </div>
             )}
           </div>
-        )}
+        </div>
 
-        {/* Action Buttons */}
-        <div className="flex justify-around items-center border-t border-gray-800 pt-3 mt-2 flex-wrap gap-2">
-  <Button 
-    variant="ghost" 
-    className={`flex items-center gap-2 flex-1 justify-center ${isLiked ? '!text-blue-500 !font-bold' : '!text-gray-400'}`}
-    onClick={handleLike}
-  >
-    <ThumbsUp className="w-5 h-5" />
-    Like
-  </Button>
-  <Button 
-    variant="ghost" 
-    className="flex items-center gap-2 flex-1 justify-center text-gray-400"
-    onClick={() => {
-      setShowCommentInput(!showCommentInput);
-      setShowComments(true);
-    }}
-  >
-    <MessageCircle className="w-5 h-5 text-green-500" />
-    Comment
-  </Button>
-  <Button 
-    variant="ghost" 
-    className="flex items-center gap-2 flex-1 justify-center text-gray-400"
-    onClick={() => setShowShareMenu(!showShareMenu)}
-  >
-    <Share2 className="w-5 h-5 text-yellow-500" />
-    Share
-  </Button>
-</div>
-
-
-        {/* Comment Input Section */}
         {showCommentInput && (
           <form onSubmit={handleCommentSubmit} className="mt-2 flex gap-2">
             <input
@@ -369,9 +263,9 @@ export default function PostCard({ post }) {
               placeholder="Write a comment..."
               className="flex-1 bg-gray-800 rounded-full px-4 py-2 text-white focus:outline-none focus:ring-2 focus:ring-green-500"
             />
-            <Button 
-              type="submit" 
-              variant="ghost" 
+            <Button
+              type="submit"
+              variant="ghost"
               size="icon"
               className="text-green-500 hover:bg-gray-800"
             >
@@ -380,19 +274,14 @@ export default function PostCard({ post }) {
           </form>
         )}
 
-        {/* Comments Section */}
         {comments.length > 0 && (
           <div className="mt-2">
             <Button
               variant="ghost"
               className="text-gray-400 text-sm flex items-center gap-1"
-              onClick={toggleComments}
+              onClick={() => setShowComments(!showComments)}
             >
-              {showComments ? (
-                <ChevronUp className="w-4 h-4" />
-              ) : (
-                <ChevronDown className="w-4 h-4" />
-              )}
+              {showComments ? <ChevronUp className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />}
               {comments.length} {comments.length === 1 ? "Comment" : "Comments"}
             </Button>
 
@@ -401,18 +290,22 @@ export default function PostCard({ post }) {
                 {comments.map((comment) => (
                   <div key={comment._id} className="flex gap-2 items-start">
                     <img
-                      src={comment.userId?.profileImage 
-                        ? comment.userId.profileImage.startsWith('http') 
-                          ? comment.userId.profileImage 
-                          : `http://localhost:3000${comment.userId.profileImage}`
-                        : null} 
+                      src={
+                        comment.userId?.profileImage
+                          ? comment.userId.profileImage.startsWith("http")
+                            ? comment.userId.profileImage
+                            : `http://localhost:3000${comment.userId.profileImage}`
+                          : ""
+                      }
                       alt="Profile"
-                      className="w-8 h-8 rounded-full"
+                      className="w-8 h-8 rounded-full object-cover"
                     />
                     <div className="flex-1 bg-gray-800 rounded-lg p-3">
                       <div className="flex justify-between items-center">
                         <h4 className="text-sm font-semibold">{comment.username}</h4>
-                        <span className="text-xs text-gray-400">{new Date(comment.createdAt).toLocaleTimeString()}</span>
+                        <span className="text-xs text-gray-400">
+                          {new Date(comment.createdAt).toLocaleTimeString()}
+                        </span>
                       </div>
                       <p className="text-sm text-gray-300 mt-1">{comment.text}</p>
                     </div>

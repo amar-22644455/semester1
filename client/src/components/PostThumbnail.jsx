@@ -10,7 +10,6 @@ const PostThumbnail = ({ post, profileFallback, currentUserId, onDelete, onShare
   const menuRef = useRef(null);
   const navigate = useNavigate();
 
-  // Close menu when clicking outside
   useEffect(() => {
     const handleClickOutside = (event) => {
       if (menuRef.current && !menuRef.current.contains(event.target)) {
@@ -26,7 +25,7 @@ const PostThumbnail = ({ post, profileFallback, currentUserId, onDelete, onShare
 
   const handleDelete = async () => {
     if (!window.confirm("Are you sure you want to delete this post?")) return;
-    
+
     setIsDeleting(true);
     try {
       const response = await fetch(`http://localhost:3000/api/delete/${post._id}`, {
@@ -55,18 +54,36 @@ const PostThumbnail = ({ post, profileFallback, currentUserId, onDelete, onShare
   };
 
   const handleShare = () => {
-    onShare(post._id);
+    const postUrl = `${window.location.origin}/post/${post._id}`;
+
+    if (navigator.share) {
+      navigator
+        .share({
+          title: 'Check out this post!',
+          text: 'Here’s something interesting I found on ShareXP!',
+          url: postUrl,
+        })
+        .then(() => toast.success('Post shared successfully!'))
+        .catch((err) => {
+          if (err.name !== 'AbortError') {
+            toast.error('Failed to share the post');
+          }
+        });
+    } else {
+      navigator.clipboard.writeText(postUrl)
+        .then(() => toast.success('Post link copied to clipboard!'))
+        .catch(() => toast.error('Failed to copy link'));
+    }
+
     setIsMenuOpen(false);
+    if (onShare) onShare(post._id);
   };
 
   const handleViewPost = () => {
-    navigate(`/post/${post._id}`, { 
-      state: { post } 
-    });
+    navigate(`/post/${post._id}`, { state: { post } });
     setIsMenuOpen(false);
   };
 
-  // Determine media URL - handle both full URLs and relative paths
   const getMediaUrl = () => {
     if (!post.media?.url) return profileFallback;
     if (post.media.url.startsWith('http')) return post.media.url;
@@ -79,7 +96,6 @@ const PostThumbnail = ({ post, profileFallback, currentUserId, onDelete, onShare
       onMouseEnter={() => setIsHovered(true)}
       onMouseLeave={() => setIsHovered(false)}
     >
-      {/* Three-dot menu button */}
       <button
         onClick={(e) => {
           e.stopPropagation();
@@ -94,7 +110,6 @@ const PostThumbnail = ({ post, profileFallback, currentUserId, onDelete, onShare
         <MoreHorizontal className="w-4 h-4" />
       </button>
 
-      {/* Post media with hover opacity effect */}
       <img 
         src={getMediaUrl()} 
         alt="Post media" 
@@ -107,7 +122,6 @@ const PostThumbnail = ({ post, profileFallback, currentUserId, onDelete, onShare
         }}
       />
 
-      {/* Hover actions */}
       {isHovered && (
         <div className="absolute inset-0 flex items-center justify-center gap-4 z-10">
           <button 
@@ -136,6 +150,7 @@ const PostThumbnail = ({ post, profileFallback, currentUserId, onDelete, onShare
           )}
           
           <button 
+            title="Share"
             className="flex items-center text-white p-2 rounded-full bg-black bg-opacity-50 hover:bg-opacity-70 transition-all"
             onClick={(e) => {
               e.stopPropagation();
@@ -148,7 +163,6 @@ const PostThumbnail = ({ post, profileFallback, currentUserId, onDelete, onShare
         </div>
       )}
 
-      {/* Dropdown menu */}
       {isMenuOpen && (
         <div 
           ref={menuRef}
@@ -194,7 +208,6 @@ const PostThumbnail = ({ post, profileFallback, currentUserId, onDelete, onShare
         </div>
       )}
 
-      {/* Quick stats at bottom */}
       <div className={`absolute bottom-2 left-2 flex items-center gap-3 text-white text-sm ${
         isHovered ? "opacity-100" : "opacity-0"
       } group-hover:opacity-100 transition-opacity duration-200`}>

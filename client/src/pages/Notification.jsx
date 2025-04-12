@@ -201,9 +201,14 @@ export default function NotificationComponent() {
                       `}
                       onClick={() => !notification.read && markAsRead(notification._id)}
                   >
+                    {/* '/default-avatar.png' */}
                       <div className="flex items-start p-4">
                           <img 
-                              src={notification.sender?.profileImage || '/default-avatar.png'} 
+                              src={notification.sender?.profileImage 
+                                                ? notification.sender?.profileImage.startsWith('http') 
+                                                  ? notification.sender.profileImage 
+                                                  : `http://localhost:3000${notification.sender?.profileImage}`
+                                                : '/default-avatar.png' } 
                               alt={notification.sender?.username} 
                               className="w-10 h-10 rounded-full object-cover mr-3"
                           />

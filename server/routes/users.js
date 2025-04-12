@@ -148,7 +148,7 @@ router.post('/CreateXp', async (req, res) => {
 // Get user name (Example API)
 router.get('/users/:id', auth, async (req, res) => {
   try {
-    const user = await User.findById(req.user.id);
+    const user = await User.findById(req.params.id);
     if (!user) return res.status(404).json({ message: "User not found" });
 
     res.json({ name: user.name , username:user.username ,profileImage: user.profileImage  });
