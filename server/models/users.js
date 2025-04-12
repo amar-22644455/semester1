@@ -6,7 +6,17 @@ const UserSchema = new mongoose.Schema({
   username: { type: String, required: true, unique: true },
   email: { type: String, required: true, unique: true },
   password: { type: String, required: true },
-  profileImage: { type: String, default: "https://picsum.photos/100" },
+  profileImage: { 
+    type: String, 
+    default: "https://picsum.photos/100",
+    set: function(value) {
+      // If value is a file path, prepend the correct URL path
+      if (value && !value.startsWith('http')) {
+        return `/profile-images/${value}`;
+      }
+      return value;
+    }
+  },
   institute: { type: String, required: true }, // College/University Name
   mobile: { type: String, required: true, unique: true }, // Mobile Number Field
   skills: [String], // Example: ["C++", "React", "Machine Learning"]

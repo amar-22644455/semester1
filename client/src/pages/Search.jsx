@@ -1,72 +1,93 @@
 import { useState, useEffect } from "react";
 import { Link, useParams } from "react-router-dom";
+import { UserSearchTrie, debounce } from "../utils/searchUtils";
 
 export default function Search() {
   const { id } = useParams();
   const [query, setQuery] = useState("");
-  const [results, setResults] = useState([]);
+  const [searchTrie, setSearchTrie] = useState(null);
+  const [filteredResults, setFilteredResults] = useState([]);
   const [recentUserSearches, setRecentUserSearches] = useState([]);
-  const [debouncedQuery, setDebouncedQuery] = useState("");
+  const [isLoading, setIsLoading] = useState(false);
 
-  // Load recent user searches from LocalStorage when component mounts
+  // Initialize search trie and load users
   useEffect(() => {
+    const initializeSearch = async () => {
+      setIsLoading(true);
+      try {
+        // 1. Create new trie instance
+        const trie = new UserSearchTrie();
+        
+        // 2. Fetch all users from backend
+        const response = await fetch(`http://localhost:3000/api/all-users`, {
+          method: "GET",
+          headers: { 
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${localStorage.getItem("token")}`,
+          },
+        });
+
+        if (!response.ok) throw new Error("Failed to fetch users");
+        
+        const users = await response.json();
+        
+        // 3. Add all users to the trie
+        trie.bulkAddUsers(users);
+        
+        // 4. Update state
+        setSearchTrie(trie);
+      } catch (error) {
+        console.error("Search initialization error:", error);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    initializeSearch();
+
+    // Load recent searches from localStorage
     const storedSearches = JSON.parse(localStorage.getItem("recentUserSearches")) || [];
     setRecentUserSearches(storedSearches);
   }, []);
 
-  useEffect(() => {
-    const timer = setTimeout(() => {
-      setDebouncedQuery(query); // Update only after delay
-    }, 500); // 500ms debounce delay
-
-    return () => clearTimeout(timer); // Cleanup on each keystroke
-  }, [query]);
-
-  const handleSearch = async (e) => {
-    const value = e.target.value;
-    setQuery(value);
-
-    if (value.trim() === "") {
-      setResults([]);
+  // Debounced search function
+  const performSearch = debounce((query, trie) => {
+    if (!query.trim()) {
+      setFilteredResults([]);
       return;
     }
-
-    try {
-      const response = await fetch(`http://localhost:3000/api/search?query=${value}`, {
-        method: "GET",
-        headers: { 
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${localStorage.getItem("token")}`,
-        },
-      });
-
-      if (!response.ok) {
-        throw new Error("Failed to fetch users");
-      }
-
-      const data = await response.json();
-      setResults(data);
-    } catch (error) {
-      console.error("Search error:", error);
+    
+    if (trie) {
+      const results = trie.search(query);
+      setFilteredResults(results);
     }
+  }, 300);
+
+  // Update search when query changes
+  useEffect(() => {
+    performSearch(query, searchTrie);
+  }, [query, searchTrie]);
+
+  const handleSearch = (e) => {
+    setQuery(e.target.value);
   };
 
   const handleUserClick = (user) => {
-    // Store recent user searches in LocalStorage
+    // Update recent searches
     let searches = JSON.parse(localStorage.getItem("recentUserSearches")) || [];
     
-    // Check if user already exists in recent searches
-    const existingIndex = searches.findIndex(u => u._id === user._id);
+    // Remove if already exists
+    searches = searches.filter(u => u._id !== user._id);
     
-    if (existingIndex >= 0) {
-      // Remove the existing entry to avoid duplicates
-      searches.splice(existingIndex, 1);
-    }
+    // Add to beginning
+    searches.unshift({
+      _id: user._id,
+      username: user.username,
+      name: user.name,
+      // Add any other minimal user data you need
+    });
     
-    // Add user to beginning of array
-    searches.unshift(user);
-    
-    // Keep only the last 5 searches
+    // Keep only last 5 searches
     if (searches.length > 5) searches.pop();
     
     localStorage.setItem("recentUserSearches", JSON.stringify(searches));
@@ -78,32 +99,26 @@ export default function Search() {
       <section>
         <main className="m-2 flex flex-row">
           {/* Left Sidebar */}
-          <div className="flex flex-col w-60 h-screen overflow-hidden">
-            <div className="mt-10 text-[25px] font-serif h-10 flex items-center pl-8 mb-auto">
-              ShareXP
-            </div>
-          <div>
-            <Link to={`/home/${id}`} className="text-[20px] text-white font-serif h-10 flex items-center pl-4">
-              <button className="w-full text-left">Home</button>
-            </Link>
+          <div className="hidden md:flex flex-col w-60 h-screen overflow-hidden">
+        <div className="mt-10 text-[25px] font-serif h-10 flex items-center pl-8">ShareXP</div>
+        <div className="flex-1"></div>
 
-            <Link to={`/message/${id}`} className="text-[20px] mt-1 text-white font-serif h-10 flex items-center pl-4">
-              <button className="w-full text-left">Messages</button>
-            </Link>
-            <Link to={`/notification/${id}`} className="text-[20px] mt-1 text-white font-serif h-10 flex items-center pl-4">
-              <button className="w-full text-left">Notifications</button>
-            </Link>
-            <Link to="/create" className="text-[20px] mt-1 text-white font-serif h-10 flex items-center pl-4">
-              <button className="w-full text-left">Create</button>
-            </Link>
-            <Link to={`/search/${id}`} className="text-[20px] text-white font-serif h-10 flex items-center pl-4">
-                <button className="w-full text-left">Search</button>
-              </Link>
-            <Link to={`/profile/${id}`} className="text-[20px] mt-1 mb-10 text-white font-serif h-10 flex items-center pl-4">
-              <button className="w-full text-left">Profile</button>
-            </Link>
-            </div>
-          </div>
+        <Link to={`/home/${id}`} className="text-[20px] text-white font-serif h-10 flex items-center pl-4">
+          <button className="w-full text-left">Home</button>
+        </Link>
+        <Link to={`/search/${id}`} className="text-[20px] mt-1 text-white font-serif h-10 flex items-center pl-4">
+          <button className="w-full text-left">Search</button>
+        </Link>
+        <Link to={`/notification/${id}`} className="text-[20px] mt-1 text-white font-serif h-10 flex items-center pl-4">
+          <button className="w-full text-left">Notifications</button>
+        </Link>
+        <Link to="/create" className="text-[20px] mt-1 text-white font-serif h-10 flex items-center pl-4">
+          <button className="w-full text-left">Create</button>
+        </Link>
+        <Link to={`/profile/${id}`} className="text-[20px] mt-1 mb-10 text-white font-serif h-10 flex items-center pl-4">
+          <button className="w-full text-left">Profile</button>
+        </Link>
+      </div>
 
           {/* Main Content Area */}
           <div className="flex-1 pl-2 ">
@@ -117,19 +132,33 @@ export default function Search() {
 
             {/* Search Results */}
             <div className="mt-4">
-              {results.length > 0 ? (
-                results.map((user) => (
+              {filteredResults.length > 0 ? (
+                filteredResults.map((user) => (
                   <Link
                     to={`/UserProfile/${user._id}`}
                     key={user._id}
                     className="block p-2 border-b hover:bg-gray-200"
                     onClick={() => handleUserClick(user)}
                   >
-                    {user.username} ({user.name})
+                    <div className="flex items-center">
+                      {user.profilePicture && (
+                        <img 
+                          src={user.profilePicture} 
+                          alt={user.username}
+                          className="w-8 h-8 rounded-full mr-2"
+                        />
+                      )}
+                      <div>
+                        <span className="font-medium">{user.username}</span>
+                        {user.name && (
+                          <span className="text-gray-600 ml-2">({user.name})</span>
+                        )}
+                      </div>
+                    </div>
                   </Link>
                 ))
               ) : (
-                query && <p className="text-gray-500 mt-2">No users found</p>
+                query && !isLoading && <p className="text-gray-500 mt-2">No users found</p>
               )}
             </div>
 

@@ -6,8 +6,9 @@ import CreateXP from "./pages/CreateXP";
 import LoginXP from "./pages/LoginXP";
 import Search from "./pages/Search";
 import UserProfile from "./pages/UserProfile";
-import Message from "./pages/Message";
+import Skills from "./pages/Skills";
 import Notification from "./pages/Notification";
+import Post from "./pages/Post";
 
 export default function App() {
   return (
@@ -20,8 +21,9 @@ export default function App() {
         <Route path="/LoginXP" element={<LoginXP />} />
         <Route path="/search/:id" element={<Search />} />
         <Route path="/UserProfile/:id" element={<UserProfile/>} />
-        <Route path="/Message/:id" element={<Message/>} />
+        <Route path="/skills/:id" element={<Skills/>} />
         <Route path="/Notification/:id" element={<Notification/>} />
+        <Route path="/post/:id" element={<Post/>} />
       </Routes>
     </Router>
   );

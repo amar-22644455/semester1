@@ -165,9 +165,7 @@ export default function NotificationComponent() {
           <Link to={`/search/${id}`} className="text-[20px] mt-1 text-white font-serif h-10 flex items-center pl-4">
             <button className="w-full text-left">Search</button>
           </Link>
-          <Link to={`/message/${id}`} className="text-[20px] mt-1 text-white font-serif h-10 flex items-center pl-4">
-            <button className="w-full text-left">Messages</button>
-          </Link>
+        
           <Link to={`/notification/${id}`} className="text-[20px] mt-1 text-white font-serif h-10 flex items-center pl-4">
             <button className="w-full text-left">Notifications</button>
           </Link>

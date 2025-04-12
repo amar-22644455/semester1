@@ -236,7 +236,11 @@ export default function PostCard({ post }) {
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-3">
             <img
-              src={postOwner?.profileImage || "/default-profile.png"}
+            src={postOwner?.profileImage 
+              ? postOwner.profileImage.startsWith('http') 
+                ? postOwner.profileImage 
+                : `http://localhost:3000${postOwner.profileImage}`
+              : null} 
               alt="Profile"
               className="h-10 w-10 w-auto rounded-full object-cover"
             />
@@ -397,7 +401,11 @@ export default function PostCard({ post }) {
                 {comments.map((comment) => (
                   <div key={comment._id} className="flex gap-2 items-start">
                     <img
-                      src={comment.profileImage || "/default-profile.png"}
+                      src={comment.userId?.profileImage 
+                        ? comment.userId.profileImage.startsWith('http') 
+                          ? comment.userId.profileImage 
+                          : `http://localhost:3000${comment.userId.profileImage}`
+                        : null} 
                       alt="Profile"
                       className="w-8 h-8 rounded-full"
                     />

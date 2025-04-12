@@ -19,30 +19,67 @@ export default function Profile() {
     setPosts(posts.filter(post => post._id !== deletedPostId));
   };
 
-  useEffect(() => {
-    const fetchUser = async () => {
-      try {
-        const response = await fetch(`http://localhost:3000/api/Profile/${id}`, {
-          method: "GET",
-          headers: {
-            "Content-Type": "application/json",
-            Authorization: `Bearer ${localStorage.getItem("token")}`,
-          },
-        });
 
-        if (!response.ok) throw new Error("Failed to fetch user");
 
-        const userData = await response.json();
-        setUser(userData);
-        // FIXED: Added fallback empty array to prevent undefined errors
-        setPosts(userData.posts || []);
-      } catch (error) {
-        console.error("Error fetching user:", error);
-      }
-    };
+    // Merge two sorted arrays (helper function for merge sort)
+const merge = (left, right) => {
+  const result = [];
+  let leftIndex = 0;
+  let rightIndex = 0;
 
-    fetchUser();
-  }, [id]);
+  while (leftIndex < left.length && rightIndex < right.length) {
+    // Compare dates (descending order: newest first)
+    const leftDate = new Date(left[leftIndex].createdAt);
+    const rightDate = new Date(right[rightIndex].createdAt);
+
+    if (leftDate > rightDate) {
+      result.push(left[leftIndex++]);
+    } else {
+      result.push(right[rightIndex++]);
+    }
+  }
+
+  // Concatenate remaining elements
+  return result.concat(left.slice(leftIndex)).concat(right.slice(rightIndex));
+};
+
+// Merge Sort (recursive)
+const mergeSort = (arr) => {
+  if (arr.length <= 1) return arr;
+
+  const mid = Math.floor(arr.length / 2);
+  const left = mergeSort(arr.slice(0, mid));
+  const right = mergeSort(arr.slice(mid));
+
+  return merge(left, right);
+};
+
+useEffect(() => {
+  const fetchUser = async () => {
+    try {
+      const response = await fetch(`http://localhost:3000/api/Profile/${id}`, {
+        method: "GET",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${localStorage.getItem("token")}`,
+        },
+      });
+
+      if (!response.ok) throw new Error("Failed to fetch user");
+
+      const userData = await response.json();
+      setUser(userData);
+
+      // Sort posts using custom merge sort (newest first)
+      const sortedPosts = mergeSort(userData.posts || []);
+      setPosts(sortedPosts);
+    } catch (error) {
+      console.error("Error fetching user:", error);
+    }
+  };
+
+  fetchUser();
+}, [id]);
 
 
   const handleEditClick = () => {
@@ -52,7 +89,7 @@ export default function Profile() {
   const handleFileChange = async (e) => {
     const file = e.target.files[0];
     if (!file) return;
-
+  
     // Validate file type and size
     if (!file.type.match('image.*')) {
       alert('Please select an image file (JPEG, PNG)');
@@ -62,10 +99,10 @@ export default function Profile() {
       alert('Image size should be less than 5MB');
       return;
     }
-
+  
     const formData = new FormData();
     formData.append('profileImage', file);
-
+  
     try {
       const response = await fetch(`http://localhost:3000/api/${id}/profile-image`, {
         method: "PATCH",
@@ -74,12 +111,12 @@ export default function Profile() {
         },
         body: formData,
       });
-
+  
       if (!response.ok) {
         const errorData = await response.json();
-        throw new Error(errorData.message || "Failed to update profile image");
+        throw new Error(errorData.error || "Failed to update profile image");
       }
-
+  
       const updatedUser = await response.json();
       setUser(updatedUser);
       alert('Profile picture updated successfully!');
@@ -109,9 +146,7 @@ export default function Profile() {
           <Link to={`/search/${id}`} className="text-[20px] mt-1 text-white font-serif h-10 flex items-center pl-4">
           <button className="w-full text-left">Search</button>
         </Link>
-        <Link to={`/message/${id}`} className="text-[20px] mt-1 text-white font-serif h-10 flex items-center pl-4">
-          <button className="w-full text-left">Messages</button>
-        </Link>
+        
         <Link to={`/notification/${id}`} className="text-[20px] mt-1 text-white font-serif h-10 flex items-center pl-4">
           <button className="w-full text-left">Notifications</button>
         </Link>
@@ -129,9 +164,17 @@ export default function Profile() {
           <header className="flex flex-row h-[33vh]">
             <div className="flex w-1/3 items-center justify-center mt-[72px]">
               <img 
-                src={user?.profileImage || profile} 
+                src={user?.profileImage 
+                  ? user.profileImage.startsWith('http') 
+                    ? user.profileImage 
+                    : `http://localhost:3000${user.profileImage}`
+                  : profile} 
+                
                 alt="User Profile" 
                 className="w-40 h-40 rounded-full" 
+                // onError={(e) => {
+                //   e.target.src = "https://picsum.photos/100";
+                // }}
               />
             </div>
 
@@ -196,7 +239,7 @@ export default function Profile() {
                       </div>
 
                       <div className="mt-2">
-                      <ProficiencyThumbnail user={user}  isCurrentUser={id === currentUserId} />
+                      <Link to={`/skills/${id}`} className="text-[15px] w-full text-left text-white font-serif flex items-center ml-5">Proficiencies</Link>
                       </div>
                     </div>
                   </div>

@@ -77,16 +77,16 @@ router.post(
   }
 );
 
-// Fetch posts for a user
-router.get("/posts/:id",auth,async (req, res) => {
-  try {
-      const posts = await Post.find({ userId: req.params.id }).sort({ createdAt: -1 });
-      res.setHeader("Content-Type", "application/json");
-      res.json(posts);
-  } catch (error) {
-      res.status(500).json({ error: "Failed to fetch posts" });
-  }
-});
+// // Fetch posts for a user
+// router.get("/posts/:id",auth,async (req, res) => {
+//   try {
+//       const posts = await Post.find({ userId: req.params.id }).sort({ createdAt: -1 });
+//       res.setHeader("Content-Type", "application/json");
+//       res.json(posts);
+//   } catch (error) {
+//       res.status(500).json({ error: "Failed to fetch posts" });
+//   }
+// });
 
 
 
@@ -101,6 +101,28 @@ router.get("/posts/:userId",auth, async (req, res) => {
   } catch (error) {
     console.error("Error fetching posts:", error);
     res.status(500).json({ error: "Failed to fetch posts" });
+  }
+});
+
+router.get("/post-view/:postId", auth, async (req, res) => {
+  console.log("Received request for post ID:", req.params.postId);
+  console.log("Authenticated user ID:", req.user._id); // From your auth middleware
+  
+  try {
+    const post = await Post.findById(req.params.postId)
+      .populate('user', 'username profileImage')
+      .populate('comments.user', 'username profileImage');
+    
+    if (!post) {
+      console.log("No post found with ID:", req.params.postId);
+      return res.status(404).json({ error: "Post not found" });
+    }
+    
+    console.log("Found post:", post._id);
+    res.json(post);
+  } catch(error) {
+    console.error("Error:", error);
+    res.status(500).json({ error: error.message });
   }
 });
 
@@ -134,6 +156,7 @@ router.get('/following', auth, async (req, res) => {
     })
     .sort({ createdAt: -1 })
     .populate('userId', 'name username profileImage institute')
+    .populate('comments.userId', 'username profileImage')
     .lean();
 
     console.log(`[Following Feed] Found ${posts.length} posts`);

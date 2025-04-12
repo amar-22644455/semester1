@@ -35,7 +35,7 @@ const fetchData = async () => {
     if (!token) {
       throw new Error("No authentication token found");
     }
-
+    
     // Fetch user and feed sequentially
     const [userResponse, feedResponse] = await Promise.all([
       fetch(`http://localhost:3000/api/users/${id}`, {
@@ -157,9 +157,6 @@ const fetchData = async () => {
         <Link to={`/search/${id}`} className="text-[20px] mt-1 text-white font-serif h-10 flex items-center pl-4">
           <button className="w-full text-left">Search</button>
         </Link>
-        <Link to={`/message/${id}`} className="text-[20px] mt-1 text-white font-serif h-10 flex items-center pl-4">
-          <button className="w-full text-left">Messages</button>
-        </Link>
         <Link to={`/notification/${id}`} className="text-[20px] mt-1 text-white font-serif h-10 flex items-center pl-4">
           <button className="w-full text-left">Notifications</button>
         </Link>
@@ -177,7 +174,11 @@ const fetchData = async () => {
           <CardContent className="flex flex-col gap-4">
             <div className="flex items-start gap-3">
               <img 
-                src={user?.profileImage || '/default-profile.jpg'} 
+                src={user?.profileImage 
+                  ? user.profileImage.startsWith('http') 
+                    ? user.profileImage 
+                    : `http://localhost:3000${user.profileImage}`
+                  : null}  
                 alt="Profile" 
                 className="w-10 h-10 rounded-full" 
               />
@@ -268,7 +269,11 @@ const fetchData = async () => {
           <>
             <div className="flex items-center gap-3 mt-5">
               <img 
-                src={user.profileImage || '/default-profile.jpg'} 
+                src={user?.profileImage 
+                  ? user.profileImage.startsWith('http') 
+                    ? user.profileImage 
+                    : `http://localhost:3000${user.profileImage}`
+                  : profile} 
                 alt="Profile" 
                 className="w-10 h-10 rounded-full" 
               />

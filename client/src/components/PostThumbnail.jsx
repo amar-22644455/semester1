@@ -1,12 +1,14 @@
 import { useState, useRef, useEffect } from "react";
 import { MoreHorizontal, Eye, Trash2, Share2, Heart, MessageSquare, Share } from "lucide-react";
 import toast from 'react-hot-toast';
+import { useNavigate } from "react-router-dom";
 
 const PostThumbnail = ({ post, profileFallback, currentUserId, onDelete, onShare }) => {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [isHovered, setIsHovered] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
   const menuRef = useRef(null);
+  const navigate = useNavigate();
 
   // Close menu when clicking outside
   useEffect(() => {
@@ -58,7 +60,9 @@ const PostThumbnail = ({ post, profileFallback, currentUserId, onDelete, onShare
   };
 
   const handleViewPost = () => {
-    console.log("Viewing post:", post._id);
+    navigate(`/post/${post._id}`, { 
+      state: { post } 
+    });
     setIsMenuOpen(false);
   };
 

@@ -9,53 +9,94 @@ const User = require('../models/users');
 const auth = require("../middleware/auth");
 const Post = require('../models/posts');
 const Notification = require('../models/notification'); // Adjust path as needed
-const multer = require('multer');
 
-// Reuse your existing Multer config from posts.js
-const { upload } = require('./posts'); // Import the Multer config you already have
+const multer = require("multer");
 
+// Configure multer for file uploads
+const storage = multer.diskStorage({
+  destination: function (req, file, cb) {
+    cb(null, "profile-images/"); // Save files in "uploads" directory
+  },
+  filename: function (req, file, cb) {
+    cb(null, Date.now() + "-" + file.originalname); // Unique filename
+  },
+});
+
+const upload = multer({ storage });
 router.patch(
   '/:id/profile-image',
   auth,
-  upload.single('profileImage'), // Reuse the same Multer instance
+  upload.single('profileImage'),
   async (req, res) => {
+    console.log('--- START PROFILE IMAGE UPLOAD ---');
+    console.log('Request params:', req.params);
+    console.log('Request user:', req.user);
+    console.log('Uploaded file:', req.file);
+
     try {
       // 1. Check if user exists
+      console.log('Checking user existence...');
       const user = await User.findById(req.params.id);
       if (!user) {
+        console.error('User not found for ID:', req.params.id);
         return res.status(404).json({ error: 'User not found' });
       }
+      console.log('User found:', user.username);
 
-      // 2. Verify the user can only update their own profile
+      // 2. Authorization check
+      console.log('Verifying authorization...');
+      console.log('Request user ID:', req.user.id, 'vs Param ID:', req.params.id);
       if (req.user.id !== req.params.id) {
+        console.error('Authorization failed - User ID mismatch');
         return res.status(403).json({ error: 'Unauthorized' });
       }
 
-      // 3. If no file was uploaded
+      // 3. Check if file was uploaded
+      console.log('Checking file upload...');
       if (!req.file) {
+        console.error('No file uploaded');
         return res.status(400).json({ error: 'No image provided' });
       }
-
-      // 4. Update ONLY the profileImage field in the database
-      const updatedUser = await User.findByIdAndUpdate(
-        req.params.id,
-        { profileImage: `/uploads/${req.file.filename}` }, // Path matches your posts uploads
-        { new: true }
-      ).select('-password'); // Exclude sensitive data
-
-      // 5. Return the new image URL
-      res.json({
-        success: true,
-        profileImage: updatedUser.profileImage,
+      console.log('File uploaded successfully:', {
+        originalname: req.file.originalname,
+        mimetype: req.file.mimetype,
+        size: req.file.size,
+        filename: req.file.filename
       });
 
+      // 4. Update user
+      console.log('Updating user profile image...');
+      const updateData = { profileImage: req.file.filename };
+      console.log('Update data being sent:', updateData);
+
+      const updatedUser = await User.findByIdAndUpdate(
+        req.params.id,
+        updateData,
+        { new: true }
+      ).select('-password');
+
+      console.log('User after update:', {
+        id: updatedUser._id,
+        profileImage: updatedUser.profileImage
+      });
+
+      // 5. Return response
+      console.log('--- UPLOAD SUCCESSFUL ---');
+      res.json(updatedUser);
+
     } catch (err) {
-      console.error('Profile upload error:', err);
-      res.status(500).json({ error: 'Failed to upload profile picture' });
+      console.error('!!! PROFILE UPLOAD ERROR !!!');
+      console.error('Error:', err.message);
+      console.error('Stack:', err.stack);
+      console.error('Full error object:', err);
+
+      res.status(500).json({ 
+        error: 'Failed to upload profile picture',
+        details: process.env.NODE_ENV === 'development' ? err.message : undefined
+      });
     }
   }
 );
-
 
 // Create a new user (Signup)
 router.post('/CreateXp', async (req, res) => {
@@ -140,29 +181,160 @@ router.get('/Profile/:id', auth, async (req, res) => {
   }
 });
 
-// Search users by name or username
-router.get("/search",auth, async (req, res) => {
+// Get all users for client-side searching
+router.get("/all-users", auth, async (req, res) => {
   try {
-    const { query } = req.query;
-
-    if (!query) {
-      return res.status(400).json({ message: "Query is required" });
-    }
-
-    // Search for users where either username or name matches the query
-    const users = await User.find({
-      $or: [
-        { username: { $regex: query, $options: "i" } }, // Case-insensitive username match
-        { name: { $regex: query, $options: "i" } }, // Case-insensitive name match
-      ],
-    }).select("username name _id"); // Fetch only required fields
-
+    // Fetch all users with only necessary fields
+    const users = await User.find({})
+      .select("username name _id profilePicture") // Add any other fields you want
+      .limit(1000); // Set a reasonable limit
+    
     res.json(users);
   } catch (error) {
-    console.error("Search Error:", error);
+    console.error("Error fetching users:", error);
     res.status(500).json({ message: "Server error" });
   }
 });
+
+// Add a new skill to user's profile
+router.post('/:userId/skills-add', async (req, res) => {
+  try {
+    const { userId } = req.params;
+    const { skill } = req.body;
+
+    // Input validation
+    if (!skill || typeof skill !== 'string' || !skill.trim()) {
+      return res.status(400).json({ error: 'Valid skill string is required' });
+    }
+
+    const updatedUser = await User.findByIdAndUpdate(
+      userId,
+      { $addToSet: { skills: skill.trim() } }, // Avoid duplicates
+      { new: true, select: 'skills' }
+    );
+
+    if (!updatedUser) {
+      return res.status(404).json({ error: 'User not found' });
+    }
+
+    res.json({
+      message: 'Skill added successfully',
+      skills: updatedUser.skills
+    });
+
+  } catch (error) {
+    console.error('Error adding skill:', error);
+    res.status(500).json({ error: 'Internal server error' });
+  }
+});
+
+// Remove a skill from user's profile
+// DELETE /api/:userId/skills/:skill
+router.delete('/:userId/skills/:skill', async (req, res) => {
+  try {
+    const { userId, skill } = req.params;
+
+    const user = await User.findByIdAndUpdate(
+      userId,
+      { $pull: { skills: skill } }, // Remove the skill string
+      { new: true, select: 'skills' }
+    );
+
+    if (!user) {
+      return res.status(404).json({ error: 'User not found' });
+    }
+
+    res.json({
+      message: 'Skill removed successfully',
+      skills: user.skills
+    });
+
+  } catch (error) {
+    console.error('Error removing skill:', error);
+    res.status(500).json({ error: 'Internal server error' });
+  }
+});
+
+// Get all skills of a user
+router.get('/:userId/skills', async (req, res) => {
+  try {
+    const { userId } = req.params;
+
+    const user = await User.findById(userId).select('skills');
+
+    if (!user) {
+      return res.status(404).json({ error: 'User not found' });
+    }
+
+    res.json({ skills: user.skills || [] });
+  } catch (error) {
+    console.error('Error fetching skills:', error);
+    res.status(500).json({ error: 'Internal server error' });
+  }
+});
+
+// Search users by skill
+router.get('/search/skills', async (req, res) => {
+  try {
+      const { skill } = req.query;
+
+      if (!skill) {
+          return res.status(400).json({ error: 'Skill query parameter is required' });
+      }
+
+      const users = await User.find(
+          { skills: { $regex: skill, $options: 'i' } },
+          { name: 1, username: 1, profileImage: 1, skills: 1 }
+      );
+
+      res.json(users);
+
+  } catch (error) {
+      console.error('Error searching by skill:', error);
+      res.status(500).json({ error: 'Internal server error' });
+  }
+});
+
+// Get all unique skills across all users (for skill suggestions)
+router.get('/skills/all', async (req, res) => {
+  try {
+      const skills = await User.aggregate([
+          { $unwind: '$skills' },
+          { $group: { _id: '$skills' } },
+          { $project: { _id: 0, skill: '$_id' } }
+      ]);
+
+      res.json(skills.map(item => item.skill));
+
+  } catch (error) {
+      console.error('Error fetching all skills:', error);
+      res.status(500).json({ error: 'Internal server error' });
+  }
+});
+
+// // Search users by name or username
+// router.get("/search",auth, async (req, res) => {
+//   try {
+//     const { query } = req.query;
+
+//     if (!query) {
+//       return res.status(400).json({ message: "Query is required" });
+//     }
+
+//     // Search for users where either username or name matches the query
+//     const users = await User.find({
+//       $or: [
+//         { username: { $regex: query, $options: "i" } }, // Case-insensitive username match
+//         { name: { $regex: query, $options: "i" } }, // Case-insensitive name match
+//       ],
+//     }).select("username name _id"); // Fetch only required fields
+
+//     res.json(users);
+//   } catch (error) {
+//     console.error("Search Error:", error);
+//     res.status(500).json({ message: "Server error" });
+//   }
+// });
 
 router.get('/userprofile/:id', auth, async (req, res) => {
   try {
