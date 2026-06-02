@@ -2,6 +2,7 @@ const express = require('express');
 const jwt = require('jsonwebtoken');
 const User = require('../models/users');
 const bcrypt = require("bcrypt");
+const auth = require('../middleware/auth');
 const router = express.Router();
 
 router.post('/login', async (req, res) => {
@@ -30,5 +31,15 @@ router.post('/login', async (req, res) => {
   res.json({ token, user: { id: user._id, name: user.name, username: user.username } });
 });
 
+router.post('/logout', (req, res) => {
+  // For logout, we can just send a success response
+  // The client will handle clearing the token
+  res.json({ message: 'Logged out successfully' });
+});
+
+router.get('/auth/me', auth, async (req, res) => {
+  // User is already verified and attached to req.user by the auth middleware
+  res.json({ id: req.user._id, name: req.user.name, username: req.user.username });
+});
 
 module.exports = router;

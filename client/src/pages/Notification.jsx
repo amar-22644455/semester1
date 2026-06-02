@@ -5,6 +5,7 @@ import io from 'socket.io-client';
 
 export default function NotificationComponent() {
   const { id } = useParams();
+  const currentUserId = localStorage.getItem("userId");
   const [notifications, setNotifications] = useState([]);
   const [unreadCount, setUnreadCount] = useState(0);
   const [socket, setSocket] = useState(null);
@@ -22,7 +23,7 @@ export default function NotificationComponent() {
   useEffect(() => {
     if (!currentUser?._id) return;
 
-    const newSocket = io("http://localhost:3000", {
+    const newSocket = io("http://localhost:5000", {
       withCredentials: true,
       reconnectionAttempts: 5,
       reconnectionDelay: 1000,
@@ -55,7 +56,7 @@ export default function NotificationComponent() {
 
   const fetchAllNotifications = async () => {
     try {
-      const response = await fetch('http://localhost:3000/api/notifications/all', {
+      const response = await fetch('http://localhost:5000/api/notifications/all', {
         headers: {
           'Authorization': `Bearer ${localStorage.getItem('token')}`,
         },
@@ -126,7 +127,7 @@ export default function NotificationComponent() {
 
   const markAsRead = async (notificationId) => {
     try {
-      await fetch(`http://localhost:3000/api/notifications/mark-read/${notificationId}`, {
+      await fetch(`http://localhost:5000/api/notifications/mark-read/${notificationId}`, {
         method: 'PATCH',
         headers: {
           'Authorization': `Bearer ${localStorage.getItem('token')}`,
@@ -152,42 +153,48 @@ export default function NotificationComponent() {
 
   return (
     <>
-      <section className="flex h-screen">
+      <section className="flex h-screen w-full bg-white">
         {/* Left Sidebar */}
-        <div className="flex flex-col w-60 h-screen overflow-hidden">
+        <div className="flex flex-col w-60 h-screen overflow-hidden mr-2">
           <div className="mt-10 text-[25px] font-serif h-10 flex items-center pl-8">
             ShareXP
           </div>
           <div className="flex-1"></div>
-          <Link to={`/home/${id}`} className="text-[20px] text-white font-serif h-10 flex items-center pl-4">
-            <button className="w-full text-left">Home</button>
-          </Link>
-          <Link to={`/search/${id}`} className="text-[20px] mt-1 text-white font-serif h-10 flex items-center pl-4">
-            <button className="w-full text-left">Search</button>
-          </Link>
-        
-          <Link to={`/notification/${id}`} className="text-[20px] mt-1 text-white font-serif h-10 flex items-center pl-4">
-            <button className="w-full text-left">Notifications</button>
-          </Link>
-          <Link to="/create" className="text-[20px] mt-1 text-white font-serif h-10 flex items-center pl-4">
-            <button className="w-full text-left">Create</button>
-          </Link>
-          <Link to={`/profile/${id}`} className="text-[20px] mt-1 mb-10 text-white font-serif h-10 flex items-center pl-4">
-            <button className="w-full text-left">Profile</button>
-          </Link>
+        <div className="space-y-3">
+        <Link to={`/home/${currentUserId}`} className="text-[20px] text-black font-serif h-10 flex items-center pl-4">
+          <button className="w-full text-left">Home</button>
+        </Link>
+        <Link to={`/search/${currentUserId}`} className="text-[20px] mt-1 text-black  font-serif h-10 flex items-center pl-4">
+          <button className="w-full text-left">Search</button>
+        </Link>
+        <Link to={`/notification/${currentUserId}`} className="text-[20px] mt-1 text-black  font-serif h-10 flex items-center pl-4">
+          <button className="w-full text-left">Notifications</button>
+        </Link>
+        <Link to={`/achievements/${currentUserId}`} className="text-[20px] mt-1 text-black font-serif h-10 flex items-center pl-4">
+          <button className="w-full text-left">Achievements</button>
+        </Link>
+        <Link to={`/profile/${currentUserId}`} className="text-[20px] mt-1 mb-10 text-black font-serif h-10 flex items-center pl-4">
+          <button className="w-full text-left">Profile</button>
+        </Link>
         </div>
+      </div>
+
 
         {/* Main Content */}
         <div className="flex flex-col flex-1">
           <div className="notification-container">
             <div className="notification-header">
               <div className="mt-10 text-[25px] font-serif h-10 flex items-center pl-8">
-                Notification  {unreadCount > 0 && <span className="unread-badge">{unreadCount}</span>}
-              </div>
+  Notifications --
+  {unreadCount > 0 && (
+    <span className="unread-badge ml-1">{unreadCount}</span>
+  )}
+</div>
+
             </div>
             <div className="notification-list">
               {notifications.length === 0 ? (
-                <div className="flex justify-center mt-10 text-gray-500">
+                <div className="flex justify-center mt-10 text-gray-600">
                   No notifications yet
                 </div>
               ) : (
@@ -196,8 +203,8 @@ export default function NotificationComponent() {
                       key={notification._id} 
                       className={`
                           transition-colors duration-200 ease-in-out
-                          ${!notification.read ? 'bg-gray-900 border-l-4 border-blue-500' : 'bg-black'}
-                          hover:bg-gray-800 cursor-pointer text-white
+                          ${!notification.read ? 'bg-gray-200 border-l-4 border-blue-500' : 'bg-white'}
+                          hover:bg-[#6f85e5] cursor-pointer text-black
                       `}
                       onClick={() => !notification.read && markAsRead(notification._id)}
                   >
@@ -207,17 +214,17 @@ export default function NotificationComponent() {
                               src={notification.sender?.profileImage 
                                                 ? notification.sender?.profileImage.startsWith('http') 
                                                   ? notification.sender.profileImage 
-                                                  : `http://localhost:3000${notification.sender?.profileImage}`
+                                                  : `http://localhost:5000${notification.sender?.profileImage}`
                                                 : '/default-avatar.png' } 
                               alt={notification.sender?.username} 
                               className="w-10 h-10 rounded-full object-cover mr-3"
                           />
                           <div className="flex-1 min-w-0">
                               <div className="flex items-center justify-between">
-                                  <p className="font-medium text-white truncate">
+                                  <p className="font-medium text-black truncate">
                                       {notification.sender?.username || 'Unknown user'}
                                   </p>
-                                  <span className="text-xs text-gray-400 whitespace-nowrap ml-2">
+                                  <span className="text-xs text-gray-600 whitespace-nowrap ml-2">
                                       {new Date(notification.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
                                   </span>
                               </div>
@@ -231,15 +238,15 @@ export default function NotificationComponent() {
                                   {notification.type === 'follow' && (
                                       <span className="mr-1">👤</span>
                                   )}
-                                  <p className="text-sm text-gray-300 truncate">
+                                  <p className="text-sm text-gray-600 truncate">
                                       {getNotificationMessage(notification)}
                                   </p>
                               </div>
-                              {notification.type !== 'follow' && `http://localhost:3000${notification?.post?.media?.url}` && (
+                              {notification.type !== 'follow' && `http://localhost:5000${notification?.post?.media?.url}` && (
                                   <div className="mt-2">
                                       <img
-                                          src={`http://localhost:3000${notification?.post?.media?.url}`}
-                                          className="w-16 h-16 rounded-md object-cover border border-gray-700"
+                                          src={`http://localhost:5000${notification?.post?.media?.url}`}
+                                          className="w-16 h-16 rounded-md object-cover border border-gray-300"
                                           alt="Post media"
                                       />
                                   </div>

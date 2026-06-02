@@ -28,7 +28,7 @@ const PostThumbnail = ({ post, profileFallback, currentUserId, onDelete, onShare
 
     setIsDeleting(true);
     try {
-      const response = await fetch(`http://localhost:3000/api/delete/${post._id}`, {
+      const response = await fetch(`http://localhost:5000/api/delete/${post._id}`, {
         method: "DELETE",
         headers: {
           "Content-Type": "application/json",
@@ -87,7 +87,7 @@ const PostThumbnail = ({ post, profileFallback, currentUserId, onDelete, onShare
   const getMediaUrl = () => {
     if (!post.media?.url) return profileFallback;
     if (post.media.url.startsWith('http')) return post.media.url;
-    return `http://localhost:3000${post.media.url}`;
+    return `http://localhost:5000${post.media.url}`;
   };
 
   return (
@@ -101,7 +101,7 @@ const PostThumbnail = ({ post, profileFallback, currentUserId, onDelete, onShare
           e.stopPropagation();
           setIsMenuOpen(!isMenuOpen);
         }}
-        className={`absolute top-2 right-2 p-1 rounded-full bg-black bg-opacity-50 text-white z-10 hover:bg-opacity-70 transition-all ${
+        className={`absolute top-2 right-2 p-1 rounded-full bg-black bg-opacity-50 text-white z-10 hover:bg-[#6f85e5] hover:bg-opacity-70 transition-all ${
           isHovered || isMenuOpen ? "opacity-100" : "opacity-0"
         } group-hover:opacity-100`}
         aria-label="Post options"
@@ -125,7 +125,7 @@ const PostThumbnail = ({ post, profileFallback, currentUserId, onDelete, onShare
       {isHovered && (
         <div className="absolute inset-0 flex items-center justify-center gap-4 z-10">
           <button 
-            className="flex items-center text-white p-2 rounded-full bg-black bg-opacity-50 hover:bg-opacity-70 transition-all"
+            className="flex items-center text-white p-2 rounded-full bg-black bg-opacity-50 hover:bg-[#6f85e5] hover:bg-opacity-70 transition-all"
             onClick={(e) => {
               e.stopPropagation();
               handleViewPost();
@@ -137,7 +137,7 @@ const PostThumbnail = ({ post, profileFallback, currentUserId, onDelete, onShare
           
           {post.userId === currentUserId && (
             <button 
-              className="flex items-center text-white p-2 rounded-full bg-black bg-opacity-50 hover:bg-opacity-70 transition-all"
+              className="flex items-center text-white p-2 rounded-full bg-black bg-opacity-50 hover:bg-[#6f85e5] hover:bg-opacity-70 transition-all"
               onClick={(e) => {
                 e.stopPropagation();
                 handleDelete();
@@ -170,7 +170,7 @@ const PostThumbnail = ({ post, profileFallback, currentUserId, onDelete, onShare
         >
           <div className="py-1">
             <button 
-              className="flex items-center w-full text-left px-3 py-2 text-sm text-white hover:bg-gray-700"
+              className="flex items-center w-full text-left px-3 py-2 text-sm text-white hover:bg-[#6f85e5]"
               onClick={(e) => {
                 e.stopPropagation();
                 handleViewPost();
@@ -182,7 +182,7 @@ const PostThumbnail = ({ post, profileFallback, currentUserId, onDelete, onShare
             
             {post.userId === currentUserId && (
               <button 
-                className="flex items-center w-full text-left px-3 py-2 text-sm text-white hover:bg-gray-700"
+                className="flex items-center w-full text-left px-3 py-2 text-sm text-white hover:bg-[#6f85e5]"
                 onClick={(e) => {
                   e.stopPropagation();
                   handleDelete();
@@ -195,7 +195,7 @@ const PostThumbnail = ({ post, profileFallback, currentUserId, onDelete, onShare
             )}
             
             <button 
-              className="flex items-center w-full text-left px-3 py-2 text-sm text-white hover:bg-gray-700"
+              className="flex items-center w-full text-left px-3 py-2 text-sm text-white hover:bg-[#6f85e5]"
               onClick={(e) => {
                 e.stopPropagation();
                 handleShare();

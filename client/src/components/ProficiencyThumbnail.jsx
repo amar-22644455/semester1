@@ -158,7 +158,7 @@ export default function ProficiencyThumbnail({ user, isCurrentUser }) {
                     setShowModal(false);
                     cancelEditing();
                   }}
-                  className="text-gray-400 hover:text-white"
+                  className="text-gray-400 hover:text-[#6f85e5]"
                   whileHover={{ scale: 1.2 }}
                   whileTap={{ scale: 0.9 }}
                 >
@@ -249,13 +249,13 @@ export default function ProficiencyThumbnail({ user, isCurrentUser }) {
                           <div className="absolute top-2 right-2 flex space-x-1">
                             <button
                               onClick={() => startEditing(skill)}
-                              className="text-gray-300 hover:text-blue-400 text-sm"
+                              className="text-gray-300 hover:text-[#6f85e5] text-sm"
                             >
                               Edit
                             </button>
                             <button
                               onClick={() => handleDeleteSkill(skill._id)}
-                              className="text-gray-300 hover:text-red-400 text-sm"
+                              className="text-gray-300 hover:text-[#6f85e5] text-sm"
                             >
                               Delete
                             </button>
@@ -303,7 +303,7 @@ export default function ProficiencyThumbnail({ user, isCurrentUser }) {
                     setShowModal(false);
                     cancelEditing();
                   }}
-                  className="px-4 py-2 bg-blue-600 text-white font-serif rounded hover:bg-blue-700 transition"
+                  className="px-4 py-2 bg-blue-600 text-white font-serif rounded hover:bg-[#6f85e5] transition"
                   whileHover={{ scale: 1.05 }}
                   whileTap={{ scale: 0.95 }}
                 >

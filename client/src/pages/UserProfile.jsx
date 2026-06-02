@@ -10,14 +10,13 @@ export default function UserProfile() {
   const [isLoading, setIsLoading] = useState(true);
   const [posts, setPosts] = useState([]);
   // Get current user ID from localStorage
-  const currentUser = JSON.parse(localStorage.getItem("user"));
-  const currentUserId = currentUser?._id;
+  const currentUserId = localStorage.getItem("userId");
 
   useEffect(() => {
     const fetchUserAndPosts = async () => {
       try {
         // Fetch user data
-        const userResponse = await fetch(`http://localhost:3000/api/userprofile/${id}`, {
+        const userResponse = await fetch(`http://localhost:5000/api/userprofile/${id}`, {
           method:"GET",
           headers: {
             Authorization: `Bearer ${localStorage.getItem("token")}`,
@@ -59,7 +58,7 @@ export default function UserProfile() {
       });
   
       // Send request to backend
-      const response = await fetch(`http://localhost:3000/api/follow/${id}`, {
+      const response = await fetch(`http://localhost:5000/api/follow/${id}`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -72,7 +71,7 @@ export default function UserProfile() {
       }
   
       // Optional: Fetch latest data to ensure sync (if needed)
-      const updatedUserResponse = await fetch(`http://localhost:3000/api/userprofile/${id}`, {
+      const updatedUserResponse = await fetch(`http://localhost:5000/api/userprofile/${id}`, {
         headers: {
           Authorization: `Bearer ${localStorage.getItem("token")}`,
         },
@@ -102,28 +101,30 @@ export default function UserProfile() {
   if (!user) return <p className="text-gray-400 p-4">User not found</p>;
 
   return (
-    <section className="flex h-screen">
+    <section className="flex h-screen w-full bg-white">
       {/* Left Sidebar */}
 
       <div className="hidden md:flex flex-col w-60 h-screen overflow-hidden">
         <div className="mt-10 text-[25px] font-serif h-10 flex items-center pl-8">ShareXP</div>
         <div className="flex-1"></div>
 
-        <Link to={`/home/${id}`} className="text-[20px] text-white font-serif h-10 flex items-center pl-4">
+          <div className="space-y-3">
+        <Link to={`/home/${currentUserId}`} className="text-[20px] text-black font-serif h-10 flex items-center pl-4">
           <button className="w-full text-left">Home</button>
         </Link>
-        <Link to={`/search/${id}`} className="text-[20px] mt-1 text-white font-serif h-10 flex items-center pl-4">
+        <Link to={`/search/${currentUserId}`} className="text-[20px] mt-1 text-black  font-serif h-10 flex items-center pl-4">
           <button className="w-full text-left">Search</button>
         </Link>
-        <Link to={`/notification/${id}`} className="text-[20px] mt-1 text-white font-serif h-10 flex items-center pl-4">
+        <Link to={`/notification/${currentUserId}`} className="text-[20px] mt-1 text-black  font-serif h-10 flex items-center pl-4">
           <button className="w-full text-left">Notifications</button>
         </Link>
-        <Link to="/create" className="text-[20px] mt-1 text-white font-serif h-10 flex items-center pl-4">
-          <button className="w-full text-left">Create</button>
+        <Link to={`/achievements/${currentUserId}`} className="text-[20px] mt-1 text-black font-serif h-10 flex items-center pl-4">
+          <button className="w-full text-left">Achievements</button>
         </Link>
-        <Link to={`/profile/${id}`} className="text-[20px] mt-1 mb-10 text-white font-serif h-10 flex items-center pl-4">
+        <Link to={`/profile/${currentUserId}`} className="text-[20px] mt-1 mb-10 text-black font-serif h-10 flex items-center pl-4">
           <button className="w-full text-left">Profile</button>
         </Link>
+        </div>
       </div>
       
       {/* <div className="flex flex-col w-60 h-screen overflow-hidden">
@@ -138,21 +139,21 @@ export default function UserProfile() {
               src={user?.profileImage 
                                 ? user.profileImage.startsWith('http') 
                                   ? user.profileImage 
-                                  : `http://localhost:3000${user.profileImage}`
+                                  : `http://localhost:5000${user.profileImage}`
                                 : profile} 
               alt="Profile" 
               className="w-40 h-40 rounded-full object-cover"
             />
           </div>
 
-          <div className="mt-4 md:mt-0 md:ml-8">
+          <div className="flex flex-col mt-4 md:mt-0 md:ml-8">
             <div className="flex items-center space-x-4">
               <h1 className="text-xl font-bold">{user.username}</h1>
               {currentUserId !== id && (
                 <button 
                   onClick={handleFollow}
                   className={`px-4 py-1 rounded-md ${
-                    isFollowing ? "bg-red-500 hover:bg-red-600" : "bg-blue-500 hover:bg-blue-600"
+                    isFollowing ? "bg-red-500 hover:bg-[#6f85e5]" : "bg-blue-500 hover:bg-[#6f85e5]"
                   } text-white transition-colors`}
                 >
                   {isFollowing ? "Unfollow" : "Follow"}
@@ -166,26 +167,21 @@ export default function UserProfile() {
               <p><span className="font-bold">{user.following?.length || 0}</span> following</p>
             </div>
 
-            <div>
+            <div className="flex flex-col">
               <p className="font-bold">{user.name}</p>
               <p>{user.institute}</p>
-              {user.skills?.length > 0 && (
-                <div className="mt-2">
-                  <p className="font-bold">Skills:</p>
-                  <div className="flex flex-wrap gap-2">
-                    {user.skills.map(skill => (
-                      <span key={skill} className="bg-gray-700 px-2 py-1 rounded">
-                        {skill}
-                      </span>
-                    ))}
-                  </div>
-                </div>
-              )}
+              <Link
+  to={`/achievements/${id}`}
+  className="text-[17px] w-full font-bold cursor-pointer text-black "
+>
+  Achievements
+</Link>
+
             </div>
           </div>
         </header>
 
-        <div className="border-t border-gray-600 py-2 text-center">
+        <div className="border-t border-gray-300 py-2 text-center">
           Posts
         </div>
         {posts.length > 0 ? (
@@ -201,7 +197,7 @@ export default function UserProfile() {
                       ))}
                     </div>
                   ) : (
-                    <div className="col-span-3 py-10 text-center text-gray-400">
+                    <div className="col-span-3 py-10 text-center text-gray-600">
                       No posts yet
                     </div>
                   )}

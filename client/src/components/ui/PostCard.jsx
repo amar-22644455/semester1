@@ -35,7 +35,7 @@ export default function PostCard({ post }) {
       if (!post?._id || !userId || !token) return;
 
       try {
-        const userRes = await fetch(`http://localhost:3000/api/users/${userId}`, {
+        const userRes = await fetch(`http://localhost:5000/api/users/${userId}`, {
           headers: { Authorization: `Bearer ${token}` }
         });
         if (userRes.ok) {
@@ -43,7 +43,7 @@ export default function PostCard({ post }) {
           setCurrentUser(userData);
         }
 
-        const likeRes = await fetch(`http://localhost:3000/api/${post._id}/like-status?userId=${userId}`, {
+        const likeRes = await fetch(`http://localhost:5000/api/${post._id}/like-status?userId=${userId}`, {
           headers: { Authorization: `Bearer ${token}` }
         });
         if (likeRes.ok) {
@@ -56,7 +56,7 @@ export default function PostCard({ post }) {
 
         if (post?.userId) {
           const ownerId = typeof post.userId === "object" ? post.userId._id : post.userId;
-          const ownerRes = await fetch(`http://localhost:3000/api/users/${ownerId}`, {
+          const ownerRes = await fetch(`http://localhost:5000/api/users/${ownerId}`, {
              headers: { Authorization: `Bearer ${token}` }
           });
           if (ownerRes.ok) {
@@ -75,7 +75,7 @@ export default function PostCard({ post }) {
   const handlePostAction = async (actionType, data = {}) => {
     try {
       const token = localStorage.getItem("token");
-      const response = await fetch('http://localhost:3000/api/actions', {
+      const response = await fetch('http://localhost:5000/api/actions', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -135,7 +135,7 @@ export default function PostCard({ post }) {
 
   const handleShare = (platform) => {
     setShowShareMenu(false);
-    const postUrl = `http://localhost:3000/posts/${post._id}`;
+    const postUrl = `http://localhost:5000/posts/${post._id}`;
     const text = `Check out this post: ${post.text}`;
 
     const urlEncoded = encodeURIComponent(postUrl);
@@ -167,147 +167,148 @@ export default function PostCard({ post }) {
   if (!post) return null;
 
   return (
-    <Card className="p-4 shadow-md rounded-2xl bg-black w-full text-white">
-      <CardContent className="flex flex-col gap-4">
-        <div className="flex items-center gap-3">
+    <Card className="bg-white border border-gray-200 rounded-lg shadow-lg overflow-hidden">
+      <CardContent className="p-6">
+        {/* User Info */}
+        <div className="flex items-center gap-3 mb-4">
           <img
             src={postOwner?.profileImage?.startsWith("http")
               ? postOwner.profileImage
-              : `http://localhost:3000${postOwner?.profileImage || ""}`}
+              : `http://localhost:5000${postOwner?.profileImage || ""}`}
             alt="Profile"
-            className="h-10 w-10 rounded-full object-cover"
+            className="h-12 w-12 rounded-full object-cover border-2 border-[#2dd4bf]"
           />
           <div>
-            <h4 className="text-lg font-semibold">{post?.username || "User"}</h4>
-            <span className="text-xs text-gray-400">{new Date(post.createdAt).toLocaleTimeString()}</span>
+            <h4 className="text-black font-semibold text-lg">{post?.username || "User"}</h4>
+            <span className="text-gray-600 text-sm">{new Date(post.createdAt).toLocaleTimeString()}</span>
           </div>
         </div>
 
-        <p className="text-gray-300">{post?.text}</p>
+        {/* Post Content */}
+        <p className="text-black text-base leading-relaxed mb-4">{post?.text}</p>
 
+        {/* Media */}
         {post?.media && (
           post.media.fileType === "image" ? (
             <img
-              src={`http://localhost:3000${post.media.url}`}
+              src={`http://localhost:5000${post.media.url}`}
               alt="Post Media"
-              className="rounded-xl object-cover"
+              className="w-full rounded-lg object-cover mb-4"
             />
           ) : post.media.fileType === "video" ? (
-            <video controls className="rounded-xl max-h-80 object-cover">
-              <source src={`http://localhost:3000${post.media.url}`} type="video/mp4" />
+            <video controls className="w-full rounded-lg max-h-80 object-cover mb-4">
+              <source src={`http://localhost:5000${post.media.url}`} type="video/mp4" />
               Your browser does not support the video tag.
             </video>
           ) : (
             <a
-              href={`http://localhost:3000${post.media.url}`}
+              href={`http://localhost:5000${post.media.url}`}
               target="_blank"
               rel="noopener noreferrer"
-              className="text-blue-400 underline"
+              className="text-[#2dd4bf] underline mb-4 block"
             >
               View Document
             </a>
           )
         )}
 
-        <div className="flex justify-around items-center border-t border-gray-800 pt-3 mt-2 flex-wrap gap-2">
-          <Button
-            variant="ghost"
-            className={`flex items-center gap-2 flex-1 justify-center ${isLiked ? '!text-blue-500 font-bold' : 'text-gray-400'}`}
+        {/* Interaction Buttons */}
+        <div className="flex items-center justify-between pt-4 border-t border-gray-200">
+          <button
+            className={`flex items-center gap-2 px-4 py-2 rounded-lg transition-all hover:bg-[#6f85e5] ${
+              isLiked ? 'text-red-500' : 'text-gray-600 hover:text-[#6f85e5]'
+            }`}
             onClick={handleLike}
           >
-            <ThumbsUp className="w-5 h-5" />
-            <span>Like</span>
-            <span className="text-sm text-gray-400">({likeCount})</span>
-          </Button>
+            <ThumbsUp className={`w-5 h-5 ${isLiked ? 'fill-current' : ''}`} />
+            <span className="text-sm font-medium">{likeCount}</span>
+          </button>
 
-          <Button
-            variant="ghost"
-            className="flex items-center gap-2 flex-1 justify-center text-gray-400"
+          <button
+            className="flex items-center gap-2 px-4 py-2 rounded-lg text-gray-600 hover:text-[#6f85e5] hover:bg-[#6f85e5] transition-all"
             onClick={() => {
               setShowCommentInput(!showCommentInput);
               setShowComments(true);
             }}
           >
-            <MessageCircle className="w-5 h-5 text-green-500" />
-            Comment
-          </Button>
+            <MessageCircle className="w-5 h-5" />
+            <span className="text-sm font-medium">{comments.length}</span>
+          </button>
 
-          <div className="relative flex-1">
-            <Button
-              variant="ghost"
-              className="flex items-center gap-2 justify-center text-gray-400 w-full"
+          <div className="relative">
+            <button
+              className="flex items-center gap-2 px-4 py-2 rounded-lg text-gray-600 hover:text-[#6f85e5] hover:bg-[#6f85e5] transition-all"
               onClick={() => setShowShareMenu(!showShareMenu)}
             >
-              <Share2 className="w-5 h-5 text-yellow-500" />
-              Share
-            </Button>
+              <Share2 className="w-5 h-5" />
+              <span className="text-sm font-medium">Share</span>
+            </button>
 
             {showShareMenu && (
-              <div className="absolute top-full mt-2 left-0 bg-gray-900 rounded-lg p-3 z-10 flex gap-3 shadow-lg">
-                <Facebook onClick={() => handleShare("facebook")} className="text-blue-600 cursor-pointer" />
-                <Twitter onClick={() => handleShare("twitter")} className="text-blue-400 cursor-pointer" />
-                <Instagram onClick={() => handleShare("instagram")} className="text-pink-500 cursor-pointer" />
-                <Linkedin onClick={() => handleShare("linkedin")} className="text-blue-700 cursor-pointer" />
-                <Mail onClick={() => handleShare("email")} className="text-gray-300 cursor-pointer" />
+              <div className="absolute bottom-full mb-2 left-0 bg-white border border-gray-200 rounded-lg p-3 z-10 flex gap-3 shadow-lg">
+                <Facebook onClick={() => handleShare("facebook")} className="text-blue-600 cursor-pointer hover:scale-110 transition-transform" />
+                <Twitter onClick={() => handleShare("twitter")} className="text-blue-400 cursor-pointer hover:scale-110 transition-transform" />
+                <Instagram onClick={() => handleShare("instagram")} className="text-pink-500 cursor-pointer hover:scale-110 transition-transform" />
+                <Linkedin onClick={() => handleShare("linkedin")} className="text-blue-700 cursor-pointer hover:scale-110 transition-transform" />
+                <Mail onClick={() => handleShare("email")} className="text-gray-300 cursor-pointer hover:scale-110 transition-transform" />
               </div>
             )}
           </div>
         </div>
 
+        {/* Comment Input */}
         {showCommentInput && (
-          <form onSubmit={handleCommentSubmit} className="mt-2 flex gap-2">
+          <form onSubmit={handleCommentSubmit} className="mt-4 flex gap-3">
             <input
               type="text"
               value={comment}
               onChange={(e) => setComment(e.target.value)}
               placeholder="Write a comment..."
-              className="flex-1 bg-gray-800 rounded-full px-4 py-2 text-white focus:outline-none focus:ring-2 focus:ring-green-500"
+              className="flex-1 bg-gray-100 border border-gray-300 rounded-lg px-4 py-3 text-black placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-[#2dd4bf] transition-all"
             />
-            <Button
+            <button
               type="submit"
-              variant="ghost"
-              size="icon"
-              className="text-green-500 hover:bg-gray-800"
+              className="bg-[#14b8a6] hover:bg-[#2dd4bf] text-white px-4 py-3 rounded-lg transition-colors"
             >
               <Send className="w-5 h-5" />
-            </Button>
+            </button>
           </form>
         )}
 
+        {/* Comments */}
         {comments.length > 0 && (
-          <div className="mt-2">
-            <Button
-              variant="ghost"
-              className="text-gray-400 text-sm flex items-center gap-1"
+          <div className="mt-4">
+            <button
+              className="text-gray-600 text-sm flex items-center gap-1 hover:text-[#6f85e5] transition-colors mb-3"
               onClick={() => setShowComments(!showComments)}
             >
               {showComments ? <ChevronUp className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />}
               {comments.length} {comments.length === 1 ? "Comment" : "Comments"}
-            </Button>
+            </button>
 
             {showComments && (
-              <div className="mt-2 space-y-3">
+              <div className="space-y-3">
                 {comments.map((comment) => (
-                  <div key={comment._id} className="flex gap-2 items-start">
+                  <div key={comment._id} className="flex gap-3 items-start">
                     <img
                       src={
                         comment.userId?.profileImage
                           ? comment.userId.profileImage.startsWith("http")
                             ? comment.userId.profileImage
-                            : `http://localhost:3000${comment.userId.profileImage}`
+                            : `http://localhost:5000${comment.userId.profileImage}`
                           : ""
                       }
                       alt="Profile"
-                      className="w-8 h-8 rounded-full object-cover"
+                      className="w-8 h-8 rounded-full object-cover flex-shrink-0"
                     />
-                    <div className="flex-1 bg-gray-800 rounded-lg p-3">
-                      <div className="flex justify-between items-center">
-                        <h4 className="text-sm font-semibold">{comment.username}</h4>
-                        <span className="text-xs text-gray-400">
+                    <div className="flex-1 bg-gray-100 rounded-lg p-3">
+                      <div className="flex justify-between items-center mb-1">
+                        <h4 className="text-sm font-semibold text-black">{comment.username}</h4>
+                        <span className="text-xs text-gray-600">
                           {new Date(comment.createdAt).toLocaleTimeString()}
                         </span>
                       </div>
-                      <p className="text-sm text-gray-300 mt-1">{comment.text}</p>
+                      <p className="text-sm text-gray-600">{comment.text}</p>
                     </div>
                   </div>
                 ))}

@@ -12,6 +12,9 @@ const Notification = require('../models/notification'); // Adjust path as needed
 
 const multer = require("multer");
 
+const PROFILE_IMAGE_LIMIT_MB = Number(process.env.PROFILE_IMAGE_LIMIT_MB || 5);
+const PROFILE_IMAGE_LIMIT_BYTES = PROFILE_IMAGE_LIMIT_MB * 1024 * 1024;
+
 // Configure multer for file uploads
 const storage = multer.diskStorage({
   destination: function (req, file, cb) {
@@ -22,11 +25,32 @@ const storage = multer.diskStorage({
   },
 });
 
-const upload = multer({ storage });
+const upload = multer({
+  storage,
+  limits: {
+    fileSize: PROFILE_IMAGE_LIMIT_BYTES,
+  },
+});
+
+const uploadProfileImage = (req, res, next) => {
+  upload.single('profileImage')(req, res, (err) => {
+    if (err instanceof multer.MulterError && err.code === 'LIMIT_FILE_SIZE') {
+      return res.status(413).json({
+        message: `File too large. Max allowed size is ${PROFILE_IMAGE_LIMIT_MB}MB.`,
+      });
+    }
+
+    if (err) {
+      return res.status(400).json({ error: err.message });
+    }
+
+    return next();
+  });
+};
 router.patch(
   '/:id/profile-image',
   auth,
-  upload.single('profileImage'),
+  uploadProfileImage,
   async (req, res) => {
     console.log('--- START PROFILE IMAGE UPLOAD ---');
     console.log('Request params:', req.params);
@@ -197,10 +221,15 @@ router.get("/all-users", auth, async (req, res) => {
 });
 
 // Add a new skill to user's profile
-router.post('/:userId/skills-add', async (req, res) => {
+router.post('/:userId/skills-add', auth, async (req, res) => {
   try {
     const { userId } = req.params;
     const { skill } = req.body;
+
+    // Authorization check - user can only modify their own skills
+    if (req.user.id !== userId) {
+      return res.status(403).json({ error: 'Unauthorized to modify this user\'s skills' });
+    }
 
     // Input validation
     if (!skill || typeof skill !== 'string' || !skill.trim()) {
@@ -230,9 +259,14 @@ router.post('/:userId/skills-add', async (req, res) => {
 
 // Remove a skill from user's profile
 // DELETE /api/:userId/skills/:skill
-router.delete('/:userId/skills/:skill', async (req, res) => {
+router.delete('/:userId/skills/:skill', auth, async (req, res) => {
   try {
     const { userId, skill } = req.params;
+
+    // Authorization check - user can only modify their own skills
+    if (req.user.id !== userId) {
+      return res.status(403).json({ error: 'Unauthorized to modify this user\'s skills' });
+    }
 
     const user = await User.findByIdAndUpdate(
       userId,
@@ -789,5 +823,6 @@ router.get('/notifications/all', auth, async (req, res) => {
     res.status(500).send('Server Error');
   }
 });
+
 module.exports = router;
 

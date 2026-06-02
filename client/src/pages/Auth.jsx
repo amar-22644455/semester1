@@ -4,7 +4,7 @@ export default function Auth() {
   const [isSignUp, setIsSignUp] = useState(false);
 
   return (
-    <div className="flex h-screen items-center justify-center bg-gray-100">
+    <div className="flex h-screen w-full items-center justify-center bg-gray-100">
       <div className="w-96 p-6 bg-white shadow-lg rounded-xl">
         <h2 className="text-2xl font-bold text-center mb-4">
           {isSignUp ? "Sign Up" : "Sign In"}

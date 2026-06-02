@@ -23,7 +23,7 @@ export default function CreateXP(){
     e.preventDefault(); // Prevent default form submission
 
     try {
-      const response = await fetch("http://localhost:3000/api/CreateXp", {
+      const response = await fetch("http://localhost:5000/api/CreateXp", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -46,11 +46,11 @@ export default function CreateXP(){
 
     return(
 <>
-<section className=" h-screen">
+<section className=" h-screen w-full bg-white">
 
     <main className="flex flex-row h-auto mt-3">
         
-        <div className="ml-auto mr-auto mt-5 mb-5 h-auto flex flex-col gap-2 border-2 border-gray-500 p-10 rounded-[4px]">
+        <div className="ml-auto mr-auto mt-5 mb-5 h-auto flex flex-col gap-2 border-2 border-gray-300 p-10 rounded-[4px]">
             <p className="font-serif text-[2.5rem] text-center">ShareXP</p>
             <p className="font-serif text-base mb-5"> Create account to share your Xperience</p>
             <form onSubmit={handleSignup} className=" flex flex-col gap-2">
@@ -120,7 +120,7 @@ export default function CreateXP(){
             value={formData.password} 
             ></input>
 
-            <button type="submit" className="mt-1 !bg-gray-900">
+            <button type="submit" className="mt-1 bg-gray-200 text-black">
                 Sign Up
 
             </button>
@@ -129,7 +129,7 @@ export default function CreateXP(){
             <div className="flex felx-col mt-2 ml-auto mr-auto w-full h-auto flex flex-col gap-2">
                 <p className="text-center font-serif">Already a Learner?
                 </p>
-                <Link to="/LoginXP"><button className="!bg-gray-900 w-full">Log in</button></Link>
+                <Link to="/LoginXP"><button className="bg-gray-200 w-full text-black">Log in</button></Link>
 
         </div>
         </div>

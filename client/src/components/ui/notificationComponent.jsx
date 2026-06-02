@@ -11,12 +11,12 @@ const NotificationItem = ({ notification }) => {
       case 'like':
         return (
           <>
-            <div className="p-2 rounded-full bg-black text-white-600">
+            <div className="p-2 rounded-full bg-blue-100 text-blue-600">
               <ThumbsUp className="w-5 h-5" />
             </div>
             <div className="flex-1">
               <p className="font-bold">{senderName}</p>
-              <p className="text-white-600">liked your post from {institute}</p>
+              <p className="text-gray-600">liked your post from {institute}</p>
               {notification.post?.media?.url && (
                 <div className="mt-2">
                   <img 
@@ -92,7 +92,7 @@ const NotificationItem = ({ notification }) => {
   };
 
   return (
-    <div className={`flex items-start p-4 gap-3 hover:bg-gray-50 ${!notification.read ? 'bg-blue-50' : ''}`}>
+    <div className={`flex items-start p-4 gap-3 hover:bg-[#6f85e5] ${!notification.read ? 'bg-blue-50' : ''}`}>
       {notification.sender?.profileImage ? (
         <img 
           src={notification.sender.profileImage} 

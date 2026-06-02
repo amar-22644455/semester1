@@ -5,11 +5,10 @@ const auth = require('../middleware/auth');
 const { check, validationResult } = require('express-validator');
 const Post = require('../models/posts');
 const User = require('../models/users');
-const { server } = require("../server"); // Import server instance
-const socketIo = require("socket.io");
-
-const io = socketIo(server); // Initialize io from the server instance
 const multer = require("multer");
+
+const POST_UPLOAD_LIMIT_MB = Number(process.env.POST_UPLOAD_LIMIT_MB || 25);
+const POST_UPLOAD_LIMIT_BYTES = POST_UPLOAD_LIMIT_MB * 1024 * 1024;
 
 // Configure multer for file uploads
 const storage = multer.diskStorage({
@@ -21,12 +20,33 @@ const storage = multer.diskStorage({
   },
 });
 
-const upload = multer({ storage });
+const upload = multer({
+  storage,
+  limits: {
+    fileSize: POST_UPLOAD_LIMIT_BYTES,
+  },
+});
+
+const uploadPostMedia = (req, res, next) => {
+  upload.single("media")(req, res, (err) => {
+    if (err instanceof multer.MulterError && err.code === "LIMIT_FILE_SIZE") {
+      return res.status(413).json({
+        message: `File too large. Max allowed size is ${POST_UPLOAD_LIMIT_MB}MB.`,
+      });
+    }
+
+    if (err) {
+      return res.status(400).json({ message: err.message });
+    }
+
+    return next();
+  });
+};
 
 router.post(
   '/posts',
   [
-    auth, upload.single("media"), // Allows only a single file
+    auth, uploadPostMedia,
     [
       check('text')
         .optional() // Makes it optional
@@ -63,6 +83,7 @@ router.post(
       });
       // Save post to database
       await post.save();
+      const io = req.app.get('io');
       if (io) {
         io.emit("newPost", post); // Ensure io is defined before emitting
       } else {

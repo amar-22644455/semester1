@@ -1,55 +1,65 @@
 @import "tailwindcss";
 
-
 :root {
   font-family: system-ui, Avenir, Helvetica, Arial, sans-serif;
   line-height: 1.5;
   font-weight: 400;
   box-sizing: border-box;
   color-scheme: light dark;
-  color: rgba(255, 255, 255, 0.87);
-  background-color: black;
-
+  color: rgba(189, 63, 63, 0.87);
+  background-color: rgb(202, 80, 80);
   font-synthesis: none;
   text-rendering: optimizeLegibility;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
 }
 
+
 a {
   font-weight: 500;
-  
   text-decoration: inherit;
 }
+
 a:hover {
   color: grey;
 }
+
 
 body {
   margin: 0;
   min-width: 320px;
   min-height: 100vh;
+  width: 100%;
+  overflow-x: hidden;
+  font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+  color: black;
+  background: white; /* Changed to white background */
+  min-height: 100vh;
+  align-items: center;
+  text-align: center;
 }
+
 
 h1 {
   font-size: 3.2em;
   line-height: 1.1;
 }
 
+
 button {
-  border-radius: 4px;
-  border: 1px solid transparent;
-  padding: 0.6em 1.2em;
-  font-size: 1em;
-  font-weight: 500;
-  font-family: inherit;
-  background-color:black;
+  background: linear-gradient(135deg, #9e4635, #d0735e);
+  color: rgb(225, 124, 124);
+  border: none;
+  padding: 10px 20px;
+  border-radius: 6px;
   cursor: pointer;
-  transition: border-color 0.25s;
+  transition: all 0.3s ease;
 }
+
 button:hover {
-  border-color: white;
+  background: linear-gradient(135deg, #8f3a2c, #c96f5c);
 }
+
 button:focus,
 button:focus-visible {
   outline: 4px auto -webkit-focus-ring-color;
@@ -86,15 +96,31 @@ button:focus-visible {
   transition: opacity 300ms, transform 300ms;
 }
 
+
 @media (prefers-color-scheme: dark) {
   :root {
-    color: #213547;
-    background-color: #ffffff;
+    color: rgb(211, 118, 118);
+    background-color: white;
   }
   a:hover {
     color: grey;
   }
-  button {
-    background-color: #f9f9f9;
-  }
+button {
+  background: linear-gradient(135deg, #9e4635, #d0735e);
+  color: white;
+  border: none;
+  padding: 10px 22px;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+button:hover {
+  transform: scale(1.05);
+  box-shadow: 0 6px 15px rgba(0, 0, 0, 0.2);
+}
+
+
+
+
 }

@@ -6,13 +6,16 @@ import Button from "@/components/ui/button";
 import image from "@/assets/image.png";
 import skill from "@/assets/skill.jpg";
 import PostCard from "@/components/ui/PostCard";
+import { useAuth } from "@/context/AuthContext";
 
-const socket = io("http://localhost:3000", {
+const socket = io("http://localhost:5000", {
   transports: ["websocket"],
 });
 
 export default function Home() {
   const { id } = useParams();
+  const { logout } = useAuth();
+  const currentUserId = localStorage.getItem("userId");
   const [user, setUser] = useState(null);
   const [feedPosts, setFeedPosts] = useState([]); // Combined feed posts
   const [file, setFile] = useState(null);
@@ -38,14 +41,14 @@ const fetchData = async () => {
     
     // Fetch user and feed sequentially
     const [userResponse, feedResponse] = await Promise.all([
-      fetch(`http://localhost:3000/api/users/${id}`, {
+      fetch(`http://localhost:5000/api/users/${id}`, {
         method: "GET",
         headers: {
           "Content-Type": "application/json",
           Authorization: `Bearer ${token}`,
         },
       }),
-      fetch("http://localhost:3000/api/following", {
+      fetch("http://localhost:5000/api/following", {
         method: "GET",
         headers: {
           "Content-Type": "application/json",
@@ -113,7 +116,7 @@ const fetchData = async () => {
     if (file) formData.append("media", file);
 
     try {
-      const response = await fetch("http://localhost:3000/api/posts", {
+      const response = await fetch("http://localhost:5000/api/posts", {
         method: "POST",
         body: formData,
         headers: {
@@ -145,45 +148,46 @@ const fetchData = async () => {
   };
 
   return (
-    <div className="flex flex-col md:flex-row h-screen">
+    <div className="flex flex-col md:flex-row h-screen bg-white">
       {/* Left Sidebar */}
       <div className="hidden md:flex flex-col w-60 h-screen overflow-hidden">
         <div className="mt-10 text-[25px] font-serif h-10 flex items-center pl-8">ShareXP</div>
         <div className="flex-1"></div>
-
-        <Link to={`/home/${id}`} className="text-[20px] text-white font-serif h-10 flex items-center pl-4">
+        <div className="space-y-3">
+        <Link to={`/home/${currentUserId}`} className="text-[20px] text-black font-serif h-10 flex items-center pl-4">
           <button className="w-full text-left">Home</button>
         </Link>
-        <Link to={`/search/${id}`} className="text-[20px] mt-1 text-white font-serif h-10 flex items-center pl-4">
+        <Link to={`/search/${id}`} className="text-[20px] mt-1 text-black  font-serif h-10 flex items-center pl-4">
           <button className="w-full text-left">Search</button>
         </Link>
-        <Link to={`/notification/${id}`} className="text-[20px] mt-1 text-white font-serif h-10 flex items-center pl-4">
+        <Link to={`/notification/${id}`} className="text-[20px] mt-1 text-black  font-serif h-10 flex items-center pl-4">
           <button className="w-full text-left">Notifications</button>
         </Link>
-        <Link to="/create" className="text-[20px] mt-1 text-white font-serif h-10 flex items-center pl-4">
-          <button className="w-full text-left">Create</button>
+        <Link to={`/achievements/${currentUserId}`} className="text-[20px] mt-1 text-black font-serif h-10 flex items-center pl-4">
+          <button className="w-full text-left">Achievements</button>
         </Link>
-        <Link to={`/profile/${id}`} className="text-[20px] mt-1 mb-10 text-white font-serif h-10 flex items-center pl-4">
+        <Link to={`/profile/${id}`} className="text-[20px] mt-1 mb-10 text-black font-serif h-10 flex items-center pl-4">
           <button className="w-full text-left">Profile</button>
         </Link>
+        </div>
       </div>
 
       {/* Main Content */}
       <div className="flex-1 overflow-y-auto p-4 md:p-6 hide-scrollbar">
-        <Card className="p-4 shadow-md rounded-2xl !bg-black w-full">
+        <Card className="p-4 shadow-md rounded-2xl bg-white w-full">
           <CardContent className="flex flex-col gap-4">
             <div className="flex items-start gap-3">
               <img 
                 src={user?.profileImage 
                   ? user.profileImage.startsWith('http') 
                     ? user.profileImage 
-                    : `http://localhost:3000${user.profileImage}`
+                    : `http://localhost:5000${user.profileImage}`
                   : null}  
                 alt="Profile" 
                 className="w-10 h-10 rounded-full" 
               />
               <textarea
-                className="w-full p-3 rounded-lg bg-gray-900 text-white resize-none focus:outline-none"
+                className="w-full p-3 rounded-lg bg-gray-100 text-black resize-none focus:outline-none"
                 placeholder="What's on your mind?"
                 rows="3"
                 value={postText}
@@ -212,24 +216,20 @@ const fetchData = async () => {
               onChange={handleFileChange}
               accept="image/*,video/*" 
             />
-            <div className="flex flex-wrap justify-between items-center border-t border-gray-800 pt-3 mt-2">
+            <div className="flex flex-wrap justify-between items-center border-t border-gray-200 pt-3 mt-2">
               <div className="flex gap-4">
                 <Button 
                   variant="ghost" 
-                  className="flex items-center gap-2 text-gray-400" 
+                  className="flex items-center gap-2 text-gray-600" 
                   onClick={() => fileInputRef.current.click()}
                 >
                   <img src={image} alt="Upload" className="w-5 h-5" />
                   Photo/Video
                 </Button>
-                <Button variant="ghost" className="flex items-center gap-2 text-gray-400">
-                  <img src={skill} alt="Upload" className="w-5 h-5" />
-                  Proficiency
-                </Button>
               </div>
               <Button 
                 onClick={handlePost} 
-                className="bg-blue-500 text-white px-4 py-2 rounded-lg hover:bg-blue-600"
+                className="bg-blue-500 text-white px-4 py-2 rounded-lg hover:bg-[#6f85e5]"
                 disabled={!postText.trim() && !file}
               >
                 Share
@@ -242,7 +242,7 @@ const fetchData = async () => {
         <div className="mt-10 space-y-6">
           {loading ? (
             <div className="flex justify-center items-center h-40">
-              <p className="text-gray-400">Loading posts...</p>
+              <p className="text-gray-600">Loading posts...</p>
             </div>
           ) : error ? (
             <div className="text-red-500 p-4 text-center">{error}</div>
@@ -255,7 +255,7 @@ const fetchData = async () => {
               />
             ))
           ) : (
-            <div className="text-center p-8 text-gray-400">
+            <div className="text-center p-8 text-gray-600">
               <p>No posts yet.</p>
               <p>Create your first post or follow users to see their posts!</p>
             </div>
@@ -272,31 +272,31 @@ const fetchData = async () => {
                 src={user?.profileImage 
                   ? user.profileImage.startsWith('http') 
                     ? user.profileImage 
-                    : `http://localhost:3000${user.profileImage}`
+                    : `http://localhost:5000${user.profileImage}`
                   : profile} 
                 alt="Profile" 
                 className="w-10 h-10 rounded-full" 
               />
               <div>
-                <p className="text-white font-medium">{user.name}</p>
-                <p className="text-gray-400 text-sm">@{user.username}</p>
+                <p className="text-black font-medium">{user.name}</p>
+                <p className="text-gray-600 text-sm">@{user.username}</p>
               </div>
             </div>
             <Link 
               to={`/profile/${id}`} 
-              className="mt-4 text-white-400 hover:text-blue-300"
+              className="mt-4 text-blue-600 hover:text-[#6f85e5]"
             >
               View Profile
             </Link>
-            <Link 
-              to="/LoginXp" 
-              className="mt-1 text-red-400 hover:text-red-300"
+            <button 
+              onClick={logout}
+              className="mt-1 text-red-600 hover:text-[#6f85e5]"
             >
               Logout
-            </Link>
+            </button>
           </>
         ) : (
-          <p className="text-gray-400 mt-5">Loading user...</p>
+          <p className="text-gray-600 mt-5">Loading user...</p>
         )}
       </div>
     </div>

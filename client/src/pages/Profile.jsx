@@ -3,12 +3,14 @@ import { Link, useParams } from "react-router-dom";
 import profile from "@/assets/profile.jpg";
 import PostThumbnail from "@/components/PostThumbnail";
 import ProficiencyThumbnail from "../components/ProficiencyThumbnail";
+import { useAuth } from "@/context/AuthContext";
 
 
 
 export default function Profile() {
   const [user, setUser] = useState(null);
   const { id } = useParams();
+  const { logout } = useAuth();
   const [posts, setPosts] = useState([]);
   const currentUserId = localStorage.getItem("userId");
   const fileInputRef = useRef(null);
@@ -57,7 +59,7 @@ const mergeSort = (arr) => {
 useEffect(() => {
   const fetchUser = async () => {
     try {
-      const response = await fetch(`http://localhost:3000/api/Profile/${id}`, {
+      const response = await fetch(`http://localhost:5000/api/Profile/${id}`, {
         method: "GET",
         headers: {
           "Content-Type": "application/json",
@@ -104,7 +106,7 @@ useEffect(() => {
     formData.append('profileImage', file);
   
     try {
-      const response = await fetch(`http://localhost:3000/api/${id}/profile-image`, {
+      const response = await fetch(`http://localhost:5000/api/${id}/profile-image`, {
         method: "PATCH",
         headers: {
           Authorization: `Bearer ${localStorage.getItem("token")}`,
@@ -131,7 +133,7 @@ useEffect(() => {
 
   return (
     <>
-      <section className="flex h-screen">
+      <section className="flex h-screen w-full bg-white">
         {/* Left Sidebar - No changes here */}
         <div className="flex flex-col w-60 h-screen overflow-hidden">
           <div className="mt-10 text-[25px] font-serif h-10 flex items-center pl-8">
@@ -140,22 +142,23 @@ useEffect(() => {
 
           <div className="flex-1"></div>
 
-          <Link to={`/home/${id}`} className="text-[20px] text-white font-serif h-10 flex items-center pl-4">
-            <button className="w-full text-left">Home</button>
-          </Link>
-          <Link to={`/search/${id}`} className="text-[20px] mt-1 text-white font-serif h-10 flex items-center pl-4">
+            <div className="space-y-3">
+        <Link to={`/home/${currentUserId}`} className="text-[20px] text-black font-serif h-10 flex items-center pl-4">
+          <button className="w-full text-left">Home</button>
+        </Link>
+        <Link to={`/search/${currentUserId}`} className="text-[20px] mt-1 text-black  font-serif h-10 flex items-center pl-4">
           <button className="w-full text-left">Search</button>
         </Link>
-        
-        <Link to={`/notification/${id}`} className="text-[20px] mt-1 text-white font-serif h-10 flex items-center pl-4">
+        <Link to={`/notification/${currentUserId}`} className="text-[20px] mt-1 text-black  font-serif h-10 flex items-center pl-4">
           <button className="w-full text-left">Notifications</button>
         </Link>
-          <Link to="/create" className="text-[20px] mt-1 text-white font-serif h-10 flex items-center pl-4">
-            <button className="w-full text-left">Create</button>
-          </Link>
-          <Link to={`/profile/${id}`} className="text-[20px] mt-1 mb-10 text-white font-serif h-10 flex items-center pl-4">
+        <Link to={`/achievements/${currentUserId}`} className="text-[20px] mt-1 text-black font-serif h-10 flex items-center pl-4">
+          <button className="w-full text-left">Achievements</button>
+        </Link>
+        <Link to={`/profile/${currentUserId}`} className="text-[20px] mt-1 mb-10 text-black font-serif h-10 flex items-center pl-4">
           <button className="w-full text-left">Profile</button>
         </Link>
+        </div>
         </div>
 
         {/* Main Content */}
@@ -167,7 +170,7 @@ useEffect(() => {
                 src={user?.profileImage 
                   ? user.profileImage.startsWith('http') 
                     ? user.profileImage 
-                    : `http://localhost:3000${user.profileImage}`
+                    : `http://localhost:5000${user.profileImage}`
                   : profile} 
                 
                 alt="User Profile" 
@@ -183,11 +186,11 @@ useEffect(() => {
                 <>
                   <div className="flex flex-row h-1/3 ml-5 mt-15">
                     <div className="flex flex-col">
-                      <p className="text-[15px] text-white font-serif flex items-left">
+                      <p className="text-[15px] text-black font-serif flex items-left">
                         <Link to="/profile" className="text-left text-[15px]">{user.username}</Link>
                       </p>
                       {/* FIXED: Changed from user.posts.length to posts.length for consistency */}
-                      <p className="text-[15px] text-white font-serif flex items-left">
+                      <p className="text-[15px] text-black font-serif flex items-left">
                         {posts.length} posts
                       </p>
                     </div>
@@ -195,7 +198,7 @@ useEffect(() => {
                     <div className="flex flex-col ml-5">
                     <a
                         onClick={handleEditClick}
-                        className="text-[15px] text-white font-serif flex items-left cursor-pointer"
+                        className="text-[15px] text-black font-serif flex items-left cursor-pointer"
                         
                       >
                         Edit
@@ -207,16 +210,16 @@ useEffect(() => {
                         accept="image/*"
                         style={{ display: 'none' }}
                       />
-                      <Link to="" className="text-[15px] text-white font-serif flex items-left">
+                      <Link to="" className="text-[15px] text-black font-serif flex items-left cursor-pointer">
                         {followersCount || 0} follower
                       </Link>
                     </div>
 
                     <div className="flex flex-col ml-5">
-                      <Link to="/LoginXP" className="text-[15px] text-white font-serif flex items-left">
+                      <a onClick={logout} className="text-[15px] text-black font-serif flex items-left cursor-pointer">
                         Logout
-                      </Link>
-                      <Link to="" className="text-[15px] text-white font-serif flex items-left">
+                      </a>
+                      <Link to="" className="text-[15px] text-black font-serif flex items-left">
                         {followingCount || 0} following
                       </Link>
                     </div>
@@ -227,25 +230,25 @@ useEffect(() => {
                   <div className="flex flex-row">
                     <div>
                       <div className="mt-2">
-                        <p className="text-[15px] w-full text-left text-white font-serif flex items-center ml-5">
+                        <p className="text-[15px] w-full text-left text-black font-serif flex items-center ml-5">
                           {user.name}
                         </p>
                       </div>
 
                       <div className="mt-2">
-                        <p className="text-[15px] w-full text-left text-white font-serif flex items-center ml-5">
+                        <p className="text-[15px] w-full text-left text-black font-serif flex items-center ml-5">
                           {user.institute}
                         </p>
                       </div>
 
                       <div className="mt-2">
-                      <Link to={`/skills/${id}`} className="text-[15px] w-full text-left text-white font-serif flex items-center ml-5">Proficiencies</Link>
+                      <Link to={`/achievements/${currentUserId}`} className="text-[15px] w-full text-left text-black font-serif flex items-center ml-5">Proficiencies</Link>
                       </div>
                     </div>
                   </div>
                 </>
               ) : (
-                <p className="text-gray-400 pl-4 mt-5">Loading profile...</p>
+                <p className="text-gray-600 pl-4 mt-5">Loading profile...</p>
               )}
             </div>
           </header>
