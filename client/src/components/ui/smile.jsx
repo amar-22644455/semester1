@@ -1,6 +1,7 @@
+import { Smile as SmileIcon } from 'lucide-react';
+
 const Smile = ({ className }) => {
-    return <span className={`text-yellow-500 text-[1.2rem] ${className}`}>😊</span>;
-  };
-  
-  export default Smile;
-  
+    return <SmileIcon className={`text-yellow-500 w-5 h-5 ${className}`} />;
+};
+
+export default Smile;

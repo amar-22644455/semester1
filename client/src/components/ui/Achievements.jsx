@@ -12,11 +12,11 @@ const Achievements = ({
 }) => {
   const themes = {
     indigo: {
-      bg: "bg-indigo-50",
-      text: "text-indigo-600",
-      border: "border-indigo-100",
-      accent: "from-indigo-500 to-purple-500",
-      iconBg: "bg-indigo-500",
+      bg: "bg-[#fcf5f2]",
+      text: "text-[#9e4635]",
+      border: "border-[#edd6cc]",
+      accent: "from-[#9e4635] to-[#d0735e]",
+      iconBg: "bg-[#9e4635]",
     },
     rose: {
       bg: "bg-rose-50",

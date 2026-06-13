@@ -150,6 +150,15 @@ router.post('/CreateXp', async (req, res) => {
     // Generate JWT token
     const token = jwt.sign({ id: user._id }, process.env.JWT_SECRET, { expiresIn: '7d' });
 
+    // Set httpOnly strict sameSite cookie
+    res.cookie('token', token, {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === 'production',
+      sameSite: 'strict',
+      maxAge: 7 * 24 * 60 * 60 * 1000, // 7 days
+      path: '/'
+    });
+
     // Return the new user and token
     res.status(201).json({ 
       message: "User created successfully",
@@ -187,12 +196,29 @@ router.get('/Profile/:id', auth, async (req, res) => {
   try {
     const user = await User.findById(req.user.id);  // Fetch user with posts
     if (!user) return res.status(404).json({ message: "User not found" });
-    const posts = await Post.find({ userId: user._id });
+    const posts = await Post.find({ userId: user._id })
+      .sort({ createdAt: -1 })
+      .populate('userId', 'name username profileImage institute')
+      .populate('comments.userId', 'username profileImage')
+      .lean();
+
+    const formattedPosts = posts.map(post => {
+      const isLiked = post.likes?.some(like => like.equals(req.user._id)) || false;
+      const likeCount = post.likes?.length || 0;
+      const commentCount = post.comments?.length || 0;
+      return {
+        ...post,
+        isLiked,
+        likeCount,
+        commentCount
+      };
+    });
+
     res.json({
       name: user.name,
       username: user.username,
       institute: user.institute,
-      posts,
+      posts: formattedPosts,
       profileImage: user.profileImage,
       skills:user.skills || [],
       followers: user.followers || 0 ,
@@ -210,7 +236,7 @@ router.get("/all-users", auth, async (req, res) => {
   try {
     // Fetch all users with only necessary fields
     const users = await User.find({})
-      .select("username name _id profilePicture") // Add any other fields you want
+      .select("username name _id profileImage") // Add any other fields you want
       .limit(1000); // Set a reasonable limit
     
     res.json(users);
@@ -375,10 +401,26 @@ router.get('/userprofile/:id', auth, async (req, res) => {
     const profileUser = await User.findById(req.params.id).select('-password');
     if (!profileUser) return res.status(404).json({ message: "User not found" });
 
-    const posts = await Post.find({ userId: req.params.id });
+    const posts = await Post.find({ userId: req.params.id })
+      .sort({ createdAt: -1 })
+      .populate('userId', 'name username profileImage institute')
+      .populate('comments.userId', 'username profileImage')
+      .lean();
 
     // Check if logged-in user follows the profile user
-    const isFollowing = profileUser.followers.includes(req.user.id);
+    const isFollowing = profileUser.followers.includes(req.user._id);
+
+    const formattedPosts = posts.map(post => {
+      const isLiked = post.likes?.some(like => like.equals(req.user._id)) || false;
+      const likeCount = post.likes?.length || 0;
+      const commentCount = post.comments?.length || 0;
+      return {
+        ...post,
+        isLiked,
+        likeCount,
+        commentCount
+      };
+    });
 
     res.json({
       user: {
@@ -392,7 +434,7 @@ router.get('/userprofile/:id', auth, async (req, res) => {
         following: profileUser.following || []
       },
       isFollowing,
-      posts
+      posts: formattedPosts
     });
   } catch (err) {
     console.error(err.message);
@@ -400,14 +442,13 @@ router.get('/userprofile/:id', auth, async (req, res) => {
   }
 });
 
-// Helper function to send real-time notification
+// Helper: emit a real-time notification to a recipient's socket room.
+// Returns true if the recipient was online (room exists), false otherwise.
 const sendRealTimeNotification = (io, userId, notificationData) => {
   const recipientRoom = `user_${userId}`;
-  if (io.sockets.adapter.rooms.has(recipientRoom)) {
-    io.to(recipientRoom).emit('new_notification', notificationData);
-    return true;
-  }
-  return false;
+  io.to(recipientRoom).emit('new_notification', notificationData);
+  // Check if anyone is actually in the room
+  return io.sockets.adapter.rooms.has(recipientRoom);
 };
 
 
@@ -441,27 +482,27 @@ router.post("/follow/:id", auth, async (req, res) => {
       loggedInUser.following.push(targetUserId);
       targetUser.followers.push(loggedInUserId);
 
+      // Always save notification to DB so it persists across page navigations
+      const savedNotification = await Notification.create({
+        recipient: targetUserId,
+        sender: loggedInUserId,
+        type: 'follow'
+      });
+      targetUser.unreadNotifications += 1;
+
+      // Also try real-time delivery with populated sender data
       const notificationData = {
+        _id: savedNotification._id,
         type: 'follow',
         sender: {
           _id: loggedInUser._id,
           username: loggedInUser.username,
           profileImage: loggedInUser.profileImage
         },
-        createdAt: new Date(),
+        createdAt: savedNotification.createdAt,
         read: false
       };
-
-      const sentRealTime = sendRealTimeNotification(io, targetUserId, notificationData);
-      
-      if (!sentRealTime) {
-        await Notification.create({
-          recipient: targetUserId,
-          sender: loggedInUserId,
-          type: 'follow'
-        });
-        targetUser.unreadNotifications += 1;
-      }
+      sendRealTimeNotification(io, targetUserId, notificationData);
     }
 
     await Promise.all([loggedInUser.save(), targetUser.save()]);
@@ -621,32 +662,33 @@ router.post('/actions', auth, [
 
         if (!isSelfAction) {
           console.log('Creating like notification...');
-          const notificationData = {
-            type: 'like',
+
+          // Always save to DB first so notification persists
+          const savedNotification = await Notification.create({
+            recipient: recipientId,
             sender: sender._id,
-            post: post._id,
-            createdAt: new Date(),
+            type: 'like',
+            post: post._id
+          });
+          await User.findByIdAndUpdate(recipientId, {
+            $inc: { unreadNotifications: 1 }
+          });
+
+          // Then attempt real-time delivery with populated sender data
+          const notificationData = {
+            _id: savedNotification._id,
+            type: 'like',
+            sender: {
+              _id: sender._id,
+              username: sender.username,
+              profileImage: sender.profileImage
+            },
+            post: { _id: post._id, media: post.media },
+            createdAt: savedNotification.createdAt,
             read: false
           };
-
-          console.log('Attempting to send real-time notification');
-          const sentRealTime = sendRealTimeNotification(io, recipientId, notificationData);
-          console.log('Real-time notification sent:', sentRealTime);
-          
-          if (!sentRealTime) {
-            console.log('Falling back to database notification');
-            await Notification.create({
-              recipient: recipientId,
-              sender: sender._id,
-              type: 'like',
-              post: post._id
-            });
-            // Update unread notifications count
-            await User.findByIdAndUpdate(recipientId, {
-              $inc: { unreadNotifications: 1 }
-            });
-            console.log('Database notification created and unread count incremented');
-          }
+          sendRealTimeNotification(io, recipientId, notificationData);
+          console.log('Like notification saved and real-time delivery attempted');
         }
 
         return res.json({ 
@@ -712,36 +754,41 @@ router.post('/actions', auth, [
             // Notification handling (unchanged)
             if (!isSelfAction) {
               console.log('Creating comment notification...');
-              const notificationData = {
-                type: 'comment',
+
+              // Always save to DB first so notification persists
+              const savedNotification = await Notification.create({
+                recipient: recipientId,
                 sender: sender._id,
+                type: 'comment',
                 post: post._id,
+                commentId: newCommentId
+              });
+              await User.findByIdAndUpdate(recipientId, {
+                $inc: { unreadNotifications: 1 }
+              });
+
+              // Then attempt real-time delivery with populated sender data
+              const notificationData = {
+                _id: savedNotification._id,
+                type: 'comment',
+                sender: {
+                  _id: sender._id,
+                  username: sender.username,
+                  profileImage: sender.profileImage
+                },
+                post: { _id: post._id, media: post.media },
                 commentId: newCommentId,
-                createdAt: new Date(),
+                createdAt: savedNotification.createdAt,
                 read: false
               };
-        
-              const sentRealTime = sendRealTimeNotification(io, recipientId, notificationData);
-              
-              if (!sentRealTime) {
-                await Notification.create({
-                  recipient: recipientId,
-                  sender: sender._id,
-                  type: 'comment',
-                  post: post._id,
-                  commentId: newCommentId
-                });
-                await User.findByIdAndUpdate(recipientId, {
-                  $inc: { unreadNotifications: 1 }
-                });
-              }
+              sendRealTimeNotification(io, recipientId, notificationData);
             }
         
             // Return the populated comment
             const populatedPost = await Post.findById(postId)
               .populate({
                 path: 'comments.userId',
-                select: 'username'
+                select: 'username profileImage'
               });
         
             return res.json({

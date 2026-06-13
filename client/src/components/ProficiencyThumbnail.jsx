@@ -158,11 +158,11 @@ export default function ProficiencyThumbnail({ user, isCurrentUser }) {
                     setShowModal(false);
                     cancelEditing();
                   }}
-                  className="text-gray-400 hover:text-[#6f85e5]"
+                  className="text-gray-400 hover:text-[#9e4635]"
                   whileHover={{ scale: 1.2 }}
                   whileTap={{ scale: 0.9 }}
                 >
-                  ✕
+                  &times;
                 </motion.button>
               </div>
               
@@ -216,7 +216,7 @@ export default function ProficiencyThumbnail({ user, isCurrentUser }) {
                       )}
                       <button
                         onClick={editingId ? handleUpdateSkill : handleAddSkill}
-                        className="px-3 py-1 bg-blue-600 text-white rounded"
+                        className="px-3 py-1 bg-[#9e4635] hover:bg-[#8f3a2c] text-white rounded border-none cursor-pointer"
                       >
                         {editingId ? "Update" : "Add"} Skill
                       </button>
@@ -249,13 +249,13 @@ export default function ProficiencyThumbnail({ user, isCurrentUser }) {
                           <div className="absolute top-2 right-2 flex space-x-1">
                             <button
                               onClick={() => startEditing(skill)}
-                              className="text-gray-300 hover:text-[#6f85e5] text-sm"
+                              className="text-gray-300 hover:text-[#9e4635] text-sm bg-transparent border-none cursor-pointer font-serif"
                             >
                               Edit
                             </button>
                             <button
                               onClick={() => handleDeleteSkill(skill._id)}
-                              className="text-gray-300 hover:text-[#6f85e5] text-sm"
+                              className="text-gray-300 hover:text-[#9e4635] text-sm bg-transparent border-none cursor-pointer font-serif"
                             >
                               Delete
                             </button>
@@ -269,7 +269,7 @@ export default function ProficiencyThumbnail({ user, isCurrentUser }) {
                         <div className="mt-2">
                           <div className="w-full bg-gray-600 rounded-full h-2 overflow-hidden">
                             <motion.div 
-                              className="bg-blue-500 h-2 rounded-full" 
+                              className="bg-[#9e4635] h-2 rounded-full" 
                               initial={{ width: 0 }}
                               animate={{ width: `${widthPercentage}%` }}
                               transition={{ 
@@ -303,7 +303,7 @@ export default function ProficiencyThumbnail({ user, isCurrentUser }) {
                     setShowModal(false);
                     cancelEditing();
                   }}
-                  className="px-4 py-2 bg-blue-600 text-white font-serif rounded hover:bg-[#6f85e5] transition"
+                  className="px-4 py-2 bg-[#9e4635] text-white font-serif rounded hover:bg-[#8f3a2c] transition border-none cursor-pointer"
                   whileHover={{ scale: 1.05 }}
                   whileTap={{ scale: 0.95 }}
                 >

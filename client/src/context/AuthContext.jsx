@@ -11,22 +11,19 @@ export function AuthProvider({ children }) {
   // Check for existing session on initial load
   useEffect(() => {
     const fetchUser = async () => {
-      const token = localStorage.getItem('token');
-      if (!token) {
-        setLoading(false);
-        return;
-      }
-      //Headers are used to send additional information about the request to the server.
-      //In this case, the Authorization header is used to send a JWT token to authenticate the user.
       try {
-        const response = await fetch("http://localhost:5000/api/auth/me", {
-          headers: {
-            'Authorization': `Bearer ${token}`
-          }
+        const response = await fetch("/api/auth/me", {
+          headers: { 'Content-Type': 'application/json' },
+          credentials: 'same-origin', // ensure cookie is sent
+          cache: 'no-store'           // never serve a cached session check
         });
-        const data = await response.json();
         if (response.ok) {
+          const data = await response.json();
           setCurrentUser(data);
+          localStorage.setItem('userId', data.id);
+        } else {
+          setCurrentUser(null);
+          localStorage.removeItem('userId');
         }
       } catch (error) {
         console.error("Failed to fetch user:", error);
@@ -39,16 +36,17 @@ export function AuthProvider({ children }) {
   }, []);
 
   const login = async (email, password) => {
-    const response = await fetch('/api/auth/login', {
+    const response = await fetch('/api/login', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ email, password }),
-      credentials: 'include'
+      credentials: 'same-origin', // ensure cookie is received and stored
+      body: JSON.stringify({ email, password })
     });
     const data = await response.json();
     if (response.ok) {
+      localStorage.setItem('userId', data.user.id);
       setCurrentUser(data.user);
-      navigate('/');
+      navigate(`/home/${data.user.id}`);
     }
     return data;
   };
@@ -56,10 +54,10 @@ export function AuthProvider({ children }) {
   const logout = async () => {
     await fetch('/api/auth/logout', {
       method: 'POST',
-      credentials: 'include'
+      credentials: 'same-origin' // ensure the cookie is sent so server can clear it
     });
-    localStorage.removeItem('token');
     localStorage.removeItem('userId');
+    localStorage.removeItem('token'); // clear legacy tokens if any
     setCurrentUser(null);
     navigate('/LoginXP');
   };
@@ -73,7 +71,7 @@ export function AuthProvider({ children }) {
   // The AuthContext.Provider component is used to wrap the children components and provide them with access to the authentication context. The value prop of the provider is set to an object that contains the currentUser, login, logout, and loading state. If the loading state is true, a loading spinner is displayed; otherwise, the children components are rendered.
   return (
     <AuthContext.Provider value={value}>
-    {loading ? <div className="flex justify-center items-center h-screen"><div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-blue-500"></div></div> : children}
+    {loading ? <div className="flex justify-center items-center h-screen"><div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-[#9e4635]"></div></div> : children}
   </AuthContext.Provider>
   );
 }

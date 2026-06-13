@@ -1,8 +1,9 @@
 import { useEffect, useState } from "react";
-import { Link, useParams } from "react-router-dom";
+import { Link, useParams, useNavigate } from "react-router-dom";
 import { Trophy, Music, Cpu, Palette } from "lucide-react";
 
 import Achievement from "../components/ui/Achievements";
+import Sidebar from "../components/Sidebar";
 
 const categoryIcon = {
   Technical: <Cpu size={32} />,
@@ -20,6 +21,7 @@ const categoryTheme = {
 
 export default function Achievements() {
   const { id } = useParams();
+  const navigate = useNavigate();
   const currentUserId = localStorage.getItem("userId");
   const isOwner = currentUserId === id;
 
@@ -40,8 +42,12 @@ export default function Achievements() {
     const fetchAchievements = async () => {
       try {
         const res = await fetch(
-          `http://localhost:5000/api/${id}/achievements`
+          `/api/${id}/achievements`
         );
+        if (res.status === 401) {
+          navigate("/LoginXP");
+          return;
+        }
         const data = await res.json();
         setAchievements(data.achievements || []);
       } catch (err) {
@@ -67,12 +73,9 @@ export default function Achievements() {
     if (!confirm("Delete this achievement?")) return;
 
     await fetch(
-      `http://localhost:5000/api/achievements/${achievementId}`,
+      `/api/achievements/${achievementId}`,
       {
         method: "DELETE",
-        headers: {
-          Authorization: `Bearer ${localStorage.getItem("token")}`,
-        },
       }
     );
 
@@ -94,12 +97,11 @@ export default function Achievements() {
     };
 
     const res = await fetch(
-      `http://localhost:5000/api/${id}/achievements`,
+      `/api/${id}/achievements`,
       {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
-          Authorization: `Bearer ${localStorage.getItem("token")}`,
         },
         body: JSON.stringify(payload),
       }
@@ -121,33 +123,8 @@ export default function Achievements() {
   };
 
   return (
-    <main className="flex h-screen w-full bg-white">
-      {/* ================= SIDEBAR ================= */}
-      <div className="flex w-60 flex-col h-screen overflow-hidden">
-        <div className="mt-10 text-[25px] font-serif h-10 flex items-center pl-8">
-          ShareXP
-        </div>
-
-        <div className="flex-1" />
-
-         <div className="space-y-3">
-        <Link to={`/home/${currentUserId}`} className="text-[20px] text-black font-serif h-10 flex items-center pl-4">
-          <button className="w-full text-left">Home</button>
-        </Link>
-        <Link to={`/search/${currentUserId}`} className="text-[20px] mt-1 text-black  font-serif h-10 flex items-center pl-4">
-          <button className="w-full text-left">Search</button>
-        </Link>
-        <Link to={`/notification/${currentUserId}`} className="text-[20px] mt-1 text-black  font-serif h-10 flex items-center pl-4">
-          <button className="w-full text-left">Notifications</button>
-        </Link>
-        <Link to={`/achievements/${currentUserId}`} className="text-[20px] mt-1 text-black font-serif h-10 flex items-center pl-4">
-          <button className="w-full text-left">Achievements</button>
-        </Link>
-        <Link to={`/profile/${currentUserId}`} className="text-[20px] mt-1 mb-10 text-black font-serif h-10 flex items-center pl-4">
-          <button className="w-full text-left">Profile</button>
-        </Link>
-        </div>
-      </div>
+    <main className="flex h-screen w-full bg-gradient-to-br from-[#f7ece7] via-[#f4e3da] to-[#ecd0c4]">
+      <Sidebar />
 
       {/* ================= MAIN ================= */}
       <section className="flex-1 overflow-y-auto p-8">
@@ -162,7 +139,7 @@ export default function Achievements() {
                     <button
                       key={tab}
                       onClick={() => setShowModal(true)}
-                      className="px-5 py-2 flex-1 bg-indigo-600 text-black rounded-xl font-semibold"
+                      className="px-5 py-2 flex-1 bg-[#9e4635] hover:bg-[#8f3a2c] text-white rounded-xl font-semibold border-none cursor-pointer transition-colors"
                     >
                       + Add Achievement
                     </button>
@@ -170,10 +147,10 @@ export default function Achievements() {
                     <button
                       key={tab}
                       onClick={() => setActiveTab(tab.toLowerCase())}
-                      className={`px-4 py-2 rounded-lg capitalize ${
-                        activeTab === tab
-                          ? "bg-indigo-600 text-white"
-                          : "text-gray-500"
+                      className={`px-4 py-2 rounded-lg capitalize border-none cursor-pointer transition-colors ${
+                        activeTab === tab.toLowerCase()
+                          ? "bg-[#9e4635] text-white"
+                          : "text-gray-500 bg-transparent hover:text-gray-700"
                       }`}
                     >
                       {tab}
@@ -223,7 +200,7 @@ export default function Achievements() {
               e.preventDefault();
               handleAdd();
             }}
-            className="bg-white rounded-2xl w-full max-w-lg p-6 space-y-4"
+            className="bg-[#fffaf7] rounded-2xl w-full max-w-lg p-6 space-y-4"
           >
             <h2 className="text-2xl font-bold">Add Achievement</h2>
 
@@ -276,7 +253,7 @@ export default function Achievements() {
               </button>
               <button
                 type="submit"
-                className="px-4 py-2 bg-indigo-600 text-white rounded-xl"
+                className="px-4 py-2 bg-[#9e4635] hover:bg-[#8f3a2c] text-white rounded-xl border-none cursor-pointer transition-colors"
               >
                 Save
               </button>

@@ -1,10 +1,13 @@
 import { useEffect, useState } from 'react';
-import { Link, useParams } from "react-router-dom";
+import { useParams, useNavigate } from "react-router-dom";
+import { ThumbsUp, MessageCircle, UserPlus } from 'lucide-react';
 import io from 'socket.io-client';
+import Sidebar from '../components/Sidebar';
 
 
 export default function NotificationComponent() {
   const { id } = useParams();
+  const navigate = useNavigate();
   const currentUserId = localStorage.getItem("userId");
   const [notifications, setNotifications] = useState([]);
   const [unreadCount, setUnreadCount] = useState(0);
@@ -23,7 +26,7 @@ export default function NotificationComponent() {
   useEffect(() => {
     if (!currentUser?._id) return;
 
-    const newSocket = io("http://localhost:5000", {
+    const newSocket = io({
       withCredentials: true,
       reconnectionAttempts: 5,
       reconnectionDelay: 1000,
@@ -56,11 +59,11 @@ export default function NotificationComponent() {
 
   const fetchAllNotifications = async () => {
     try {
-      const response = await fetch('http://localhost:5000/api/notifications/all', {
-        headers: {
-          'Authorization': `Bearer ${localStorage.getItem('token')}`,
-        },
-      });
+      const response = await fetch('/api/notifications/all');
+      if (response.status === 401) {
+        navigate("/LoginXP");
+        return;
+      }
       const data = await response.json();
   
       const allNotifications = Array.isArray(data) ? data : [];
@@ -127,10 +130,9 @@ export default function NotificationComponent() {
 
   const markAsRead = async (notificationId) => {
     try {
-      await fetch(`http://localhost:5000/api/notifications/mark-read/${notificationId}`, {
+      await fetch(`/api/notifications/mark-read/${notificationId}`, {
         method: 'PATCH',
         headers: {
-          'Authorization': `Bearer ${localStorage.getItem('token')}`,
           'Content-Type': 'application/json'
         }
       });
@@ -153,31 +155,8 @@ export default function NotificationComponent() {
 
   return (
     <>
-      <section className="flex h-screen w-full bg-white">
-        {/* Left Sidebar */}
-        <div className="flex flex-col w-60 h-screen overflow-hidden mr-2">
-          <div className="mt-10 text-[25px] font-serif h-10 flex items-center pl-8">
-            ShareXP
-          </div>
-          <div className="flex-1"></div>
-        <div className="space-y-3">
-        <Link to={`/home/${currentUserId}`} className="text-[20px] text-black font-serif h-10 flex items-center pl-4">
-          <button className="w-full text-left">Home</button>
-        </Link>
-        <Link to={`/search/${currentUserId}`} className="text-[20px] mt-1 text-black  font-serif h-10 flex items-center pl-4">
-          <button className="w-full text-left">Search</button>
-        </Link>
-        <Link to={`/notification/${currentUserId}`} className="text-[20px] mt-1 text-black  font-serif h-10 flex items-center pl-4">
-          <button className="w-full text-left">Notifications</button>
-        </Link>
-        <Link to={`/achievements/${currentUserId}`} className="text-[20px] mt-1 text-black font-serif h-10 flex items-center pl-4">
-          <button className="w-full text-left">Achievements</button>
-        </Link>
-        <Link to={`/profile/${currentUserId}`} className="text-[20px] mt-1 mb-10 text-black font-serif h-10 flex items-center pl-4">
-          <button className="w-full text-left">Profile</button>
-        </Link>
-        </div>
-      </div>
+      <section className="flex h-screen w-full bg-gradient-to-br from-[#f7ece7] via-[#f4e3da] to-[#ecd0c4]">
+        <Sidebar />
 
 
         {/* Main Content */}
@@ -201,21 +180,17 @@ export default function NotificationComponent() {
                 notifications.map(notification => (
                   <div 
                       key={notification._id} 
-                      className={`
+                        className={`
                           transition-colors duration-200 ease-in-out
-                          ${!notification.read ? 'bg-gray-200 border-l-4 border-blue-500' : 'bg-white'}
-                          hover:bg-[#6f85e5] cursor-pointer text-black
-                      `}
+                          ${!notification.read ? 'bg-[#fcf5f2] border-l-4 border-[#9e4635]' : 'bg-[#fffaf7]'}
+                          hover:bg-[#f2ddd0] cursor-pointer text-black
+                        `}
                       onClick={() => !notification.read && markAsRead(notification._id)}
                   >
                     {/* '/default-avatar.png' */}
                       <div className="flex items-start p-4">
                           <img 
-                              src={notification.sender?.profileImage 
-                                                ? notification.sender?.profileImage.startsWith('http') 
-                                                  ? notification.sender.profileImage 
-                                                  : `http://localhost:5000${notification.sender?.profileImage}`
-                                                : '/default-avatar.png' } 
+                              src={notification.sender?.profileImage || '/default-avatar.png' } 
                               alt={notification.sender?.username} 
                               className="w-10 h-10 rounded-full object-cover mr-3"
                           />
@@ -228,31 +203,31 @@ export default function NotificationComponent() {
                                       {new Date(notification.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
                                   </span>
                               </div>
-                              <div className="mt-1 flex">
+                              <div className="mt-1 flex items-center gap-1">
                                   {notification.type === 'like' && (
-                                      <span className="mr-1">👍</span>
+                                      <ThumbsUp className="w-4 h-4 text-[#9e4635]" />
                                   )}
                                   {notification.type === 'comment' && (
-                                      <span className="mr-1">💬</span>
+                                      <MessageCircle className="w-4 h-4 text-[#9e4635]" />
                                   )}
                                   {notification.type === 'follow' && (
-                                      <span className="mr-1">👤</span>
+                                      <UserPlus className="w-4 h-4 text-[#9e4635]" />
                                   )}
                                   <p className="text-sm text-gray-600 truncate">
                                       {getNotificationMessage(notification)}
                                   </p>
                               </div>
-                              {notification.type !== 'follow' && `http://localhost:5000${notification?.post?.media?.url}` && (
+                              {notification.type !== 'follow' && notification?.post?.media?.url && (
                                   <div className="mt-2">
                                       <img
-                                          src={`http://localhost:5000${notification?.post?.media?.url}`}
+                                          src={notification?.post?.media?.url}
                                           className="w-16 h-16 rounded-md object-cover border border-gray-300"
                                           alt="Post media"
                                       />
                                   </div>
                               )}
                               {!notification.read && (
-                                  <div className="mt-2 w-2 h-2 rounded-full bg-blue-500"></div>
+                                  <div className="mt-2 w-2 h-2 rounded-full bg-[#9e4635]"></div>
                               )}
                           </div>
                       </div>

@@ -23,13 +23,10 @@ export default function CreateXP(){
     e.preventDefault(); // Prevent default form submission
 
     try {
-      const response = await fetch("http://localhost:5000/api/CreateXp", {
+      const response = await fetch("/api/CreateXp", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
-          
-          
-
         },
         body: JSON.stringify(formData),
       });
@@ -48,9 +45,9 @@ export default function CreateXP(){
 <>
 <section className=" h-screen w-full bg-white">
 
-    <main className="flex flex-row h-auto mt-3">
+    <main className="flex flex-row h-auto mt-3 ">
         
-        <div className="ml-auto mr-auto mt-5 mb-5 h-auto flex flex-col gap-2 border-2 border-gray-300 p-10 rounded-[4px]">
+        <div className="ml-auto mr-auto mt-5 mb-5 h-auto flex flex-col gap-2 border-2 border-gray-300 p-10 rounded-[4px] bg-gradient-to-br from-[#f7ece7] via-[#f4e3da] to-[#ecd0c4]">
             <p className="font-serif text-[2.5rem] text-center">ShareXP</p>
             <p className="font-serif text-base mb-5"> Create account to share your Xperience</p>
             <form onSubmit={handleSignup} className=" flex flex-col gap-2">
@@ -59,7 +56,7 @@ export default function CreateXP(){
             name="name"
             type="text"
             placeholder="Full Name"
-            className="w-full p-2 border rounded-xs focus:outline-none focus:ring-2 focus:ring-blue-500"
+            className="w-full p-2 border rounded-xs focus:outline-none focus:ring-2 focus:ring-[#9e4635]"
             
             onChange={handleChange}
             value={formData.name} 
@@ -69,7 +66,7 @@ export default function CreateXP(){
             name="email"
             type="text"
             placeholder="Institute Email"
-            className="w-full p-2 border rounded-xs focus:outline-none focus:ring-2 focus:ring-blue-500"
+            className="w-full p-2 border rounded-xs focus:outline-none focus:ring-2 focus:ring-[#9e4635]"
             
             onChange={handleChange}
             value={formData.email} 
@@ -80,7 +77,7 @@ export default function CreateXP(){
             name="institute"
             type="text"
             placeholder="Institute Name"
-            className="w-full p-2 border rounded-xs focus:outline-none focus:ring-2 focus:ring-blue-500"
+            className="w-full p-2 border rounded-xs focus:outline-none focus:ring-2 focus:ring-[#9e4635]"
             
             onChange={handleChange}
             value={formData.institute} 
@@ -91,7 +88,7 @@ export default function CreateXP(){
             name="mobile"
             type="tel"
             placeholder="Mobile Number"
-            className="w-full p-2 border rounded-xs focus:outline-none focus:ring-2 focus:ring-blue-500"
+            className="w-full p-2 border rounded-xs focus:outline-none focus:ring-2 focus:ring-[#9e4635]"
             
             onChange={handleChange}
             value={formData.mobile} 
@@ -103,7 +100,7 @@ export default function CreateXP(){
             name="username"
             type="text"
             placeholder="Username"
-            className="w-full p-2 border rounded-xs focus:outline-none focus:ring-2 focus:ring-blue-500"
+            className="w-full p-2 border rounded-xs focus:outline-none focus:ring-2 focus:ring-[#9e4635]"
              
             onChange={handleChange}
             value={formData.username}
@@ -114,7 +111,7 @@ export default function CreateXP(){
             type="text"
             placeholder="Password"
             autoComplete="new-password"
-            className="w-full p-2 border rounded-xs focus:outline-none focus:ring-2 focus:ring-blue-500"
+            className="w-full p-2 border rounded-xs focus:outline-none focus:ring-2 focus:ring-[#9e4635]"
             
             onChange={handleChange}
             value={formData.password} 

@@ -15,25 +15,39 @@ router.post('/login', async (req, res) => {
   }
   // Find the user by email
   const user = await User.findOne({ email });
-  // If the user doesn't exist or the password is incorrect, return an error
+  // If the user doesn't exist or the password is incorrect, return a generic error
   if(!user){
-    return res.status(401).json({ message: 'Email is incorrect ' });
+    return res.status(401).json({ message: 'Invalid email or password' });
   }
   const validPassword = await bcrypt.compare(password, user.password)
   if (!validPassword) {
-    return res.status(401).json({ message: 'Password is incorrect ' });
+    return res.status(401).json({ message: 'Invalid email or password' });
   }
 
-  // Generate a JWT token with the user ID as payload
-  const token = jwt.sign({ id : user._id }, process.env.JWT_SECRET);
+  // Generate a JWT token with the user ID as payload and 7-day expiration
+  const token = jwt.sign({ id : user._id }, process.env.JWT_SECRET, { expiresIn: '7d' });
 
-  // Return the token as JSON
-  res.json({ token, user: { id: user._id, name: user.name, username: user.username } });
+  // Set httpOnly strict sameSite cookie
+  res.cookie('token', token, {
+    httpOnly: true,
+    secure: process.env.NODE_ENV === 'production',
+    sameSite: 'strict',
+    maxAge: 7 * 24 * 60 * 60 * 1000, // 7 days
+    path: '/'
+  });
+
+  // Return only non-sensitive user info. The JWT is delivered via the httpOnly
+  // cookie above — do NOT include it in the response body (XSS-safe).
+  res.json({ user: { id: user._id, name: user.name, username: user.username } });
 });
 
 router.post('/logout', (req, res) => {
-  // For logout, we can just send a success response
-  // The client will handle clearing the token
+  res.clearCookie('token', {
+    httpOnly: true,
+    secure: process.env.NODE_ENV === 'production',
+    sameSite: 'strict',
+    path: '/'
+  });
   res.json({ message: 'Logged out successfully' });
 });
 

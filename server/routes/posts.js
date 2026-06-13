@@ -83,14 +83,27 @@ router.post(
       });
       // Save post to database
       await post.save();
+      // Populate owner user info before sending response and socket event
+      const populatedPost = await Post.findById(post._id)
+        .populate('userId', 'name username profileImage institute')
+        .lean();
+
+      // Ensure properties are set
+      const formattedPost = {
+        ...populatedPost,
+        isLiked: false,
+        likeCount: 0,
+        commentCount: 0
+      };
+
       const io = req.app.get('io');
       if (io) {
-        io.emit("newPost", post); // Ensure io is defined before emitting
+        io.emit("newPost", formattedPost); // Ensure io is defined before emitting
       } else {
         console.error("Socket.io is not initialized.");
       }
       // Return created post
-      res.status(201).json(post);
+      res.status(201).json(formattedPost);
     } catch (err) {
       console.error(err.message);
       res.status(500).json({ message: 'Server Error' });
@@ -116,9 +129,23 @@ router.get("/posts/:userId",auth, async (req, res) => {
   try {
     const posts = await Post.find({ userId: req.params.userId })
       .sort({ createdAt: -1 })
-      .populate('userId', 'username profileImage'); // Populate user details
+      .populate('userId', 'name username profileImage institute')
+      .populate('comments.userId', 'username profileImage')
+      .lean();
     
-    res.json(posts);
+    const formattedPosts = posts.map(post => {
+      const isLiked = post.likes?.some(like => like.equals(req.user._id)) || false;
+      const likeCount = post.likes?.length || 0;
+      const commentCount = post.comments?.length || 0;
+      return {
+        ...post,
+        isLiked,
+        likeCount,
+        commentCount
+      };
+    });
+
+    res.json(formattedPosts);
   } catch (error) {
     console.error("Error fetching posts:", error);
     res.status(500).json({ error: "Failed to fetch posts" });
@@ -131,16 +158,28 @@ router.get("/post-view/:postId", auth, async (req, res) => {
   
   try {
     const post = await Post.findById(req.params.postId)
-      .populate('user', 'username profileImage')
-      .populate('comments.user', 'username profileImage');
+      .populate('userId', 'name username profileImage institute')
+      .populate('comments.userId', 'username profileImage')
+      .lean();
     
     if (!post) {
       console.log("No post found with ID:", req.params.postId);
       return res.status(404).json({ error: "Post not found" });
     }
     
+    const isLiked = post.likes?.some(like => like.equals(req.user._id)) || false;
+    const likeCount = post.likes?.length || 0;
+    const commentCount = post.comments?.length || 0;
+
+    const formattedPost = {
+      ...post,
+      isLiked,
+      likeCount,
+      commentCount
+    };
+    
     console.log("Found post:", post._id);
-    res.json(post);
+    res.json(formattedPost);
   } catch(error) {
     console.error("Error:", error);
     res.status(500).json({ error: error.message });

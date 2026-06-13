@@ -52,7 +52,7 @@ const ShareXP = () => {
         {/* Call-to-Action */}
         <section className="sharexp-cta">
           <button className="cta-button" onClick={() => navigate('/LoginXP')}> {/* Navigate to Home */}
-            🚀 Join Now
+            Join Now
           </button>
         </section>
       </main>

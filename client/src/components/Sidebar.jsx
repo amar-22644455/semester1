@@ -1,0 +1,89 @@
+import { Link, useLocation } from "react-router-dom";
+import { Home, Search, Bell, Award, User, LogOut } from "lucide-react";
+import { useAuth } from "@/context/AuthContext";
+
+export default function Sidebar() {
+  const location = useLocation();
+  const { logout } = useAuth();
+  const currentUserId = localStorage.getItem("userId");
+
+  const menuItems = [
+    {
+      name: "Home",
+      path: `/home/${currentUserId}`,
+      icon: Home
+    },
+    {
+      name: "Search",
+      path: `/search/${currentUserId}`,
+      icon: Search
+    },
+    {
+      name: "Notifications",
+      path: `/notification/${currentUserId}`,
+      icon: Bell
+    },
+    {
+      name: "Achievements",
+      path: `/achievements/${currentUserId}`,
+      icon: Award
+    },
+    {
+      name: "Profile",
+      path: `/profile/${currentUserId}`,
+      icon: User
+    }
+  ];
+
+  const isActive = (path) => {
+    // Exact match or matches start of path (to handle /profile/:id active state)
+    const baseCurrent = location.pathname.toLowerCase();
+    const baseTarget = path.split("/")[1].toLowerCase();
+    return baseCurrent.includes(baseTarget);
+  };
+
+  return (
+    <div className="hidden md:flex flex-col w-64 h-screen bg-[#fffaf7] border-r border-[#edd6cc] px-4 py-8 justify-between flex-shrink-0">
+      <div className="flex flex-col gap-8">
+        {/* Logo */}
+        <Link 
+          to={`/home/${currentUserId}`} 
+          className="text-2xl font-serif font-black bg-gradient-to-r from-[#9e4635] to-[#d0735e] bg-clip-text text-transparent pl-4"
+        >
+          ShareXP
+        </Link>
+
+        {/* Navigation Items */}
+        <nav className="flex flex-col gap-2">
+          {menuItems.map((item) => {
+            const Icon = item.icon;
+            const active = isActive(item.path);
+            return (
+              <Link
+                key={item.name}
+                to={item.path}
+                className={`flex items-center gap-3 px-4 py-3 rounded-xl font-medium text-[16px] transition-all duration-200 ${
+                  active
+                    ? "bg-[#edd6cc] text-[#9e4635] shadow-sm font-semibold"
+                    : "text-gray-600 hover:bg-[#fcf5f2] hover:text-gray-900"
+                }`}
+              >
+                <Icon className={`w-5 h-5 ${active ? "text-[#9e4635]" : "text-gray-400"}`} />
+                {item.name}
+              </Link>
+            );
+          })}
+        </nav>
+      </div>
+
+      {/* Logout button in sidebar */}
+      <button
+        onClick={logout}
+        className="flex items-center gap-3 px-4 py-3 rounded-xl font-medium text-[16px] text-red-500 hover:bg-red-50 hover:text-red-600 transition-all duration-200 border-none cursor-pointer bg-transparent"
+      >
+        <LogOut className="w-5 h-5 text-red-400" />
+        Logout
+      </button>
+    </div>
+  );
+}

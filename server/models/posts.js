@@ -6,8 +6,8 @@ const PostSchema = new mongoose.Schema({
   institute: { type: String, required: true },
   text: { type: String },
   media: {
-    url: { type: String, required: true },
-    fileType: { type: String, enum: ["image", "video", "document"], required: true },
+    url: { type: String },
+    fileType: { type: String, enum: ["image", "video", "document"] },
     size: { type: Number } // Optional: Size in bytes
   },
   likes: [{ type: mongoose.Schema.Types.ObjectId, ref: "User" }], // Array of user IDs

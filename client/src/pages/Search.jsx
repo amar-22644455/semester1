@@ -1,9 +1,11 @@
 import { useState, useEffect } from "react";
-import { Link, useParams } from "react-router-dom";
+import { Link, useParams, useNavigate } from "react-router-dom";
 import { UserSearchTrie, debounce } from "../utils/searchUtils";
+import Sidebar from "../components/Sidebar";
 
 export default function Search() {
   const { id } = useParams();
+  const navigate = useNavigate();
   const currentUserId = localStorage.getItem("userId");
   const [query, setQuery] = useState("");
   const [searchTrie, setSearchTrie] = useState(null);
@@ -20,13 +22,17 @@ export default function Search() {
         const trie = new UserSearchTrie();
         
         // 2. Fetch all users from backend
-        const response = await fetch(`http://localhost:5000/api/all-users`, {
+        const response = await fetch(`/api/all-users`, {
           method: "GET",
           headers: { 
             "Content-Type": "application/json",
-            Authorization: `Bearer ${localStorage.getItem("token")}`,
           },
         });
+
+        if (response.status === 401) {
+          navigate("/LoginXP");
+          return;
+        }
 
         if (!response.ok) throw new Error("Failed to fetch users");
         
@@ -96,128 +102,87 @@ export default function Search() {
 
   return (
     <>
-        <div className="flex md:flex-row min-h-screen md:w-full bg-white">
-  {/* Left Sidebar */}
-  <div className="hidden md:flex flex-col w-60">
-    <div className="mt-10 text-[25px] font-serif h-10 flex items-center pl-8">
-      ShareXP
-    </div>
+      <div className="flex flex-col md:flex-row h-screen w-full bg-gradient-to-br from-[#f7ece7] via-[#f4e3da] to-[#ecd0c4] text-black">
+        <Sidebar />
 
-    <div className="flex-1" />
-  <div className="space-y-3">
-        <Link to={`/home/${currentUserId}`} className="text-[20px] text-black font-serif h-10 flex items-center pl-4">
-          <button className="w-full text-left">Home</button>
-        </Link>
-        <Link to={`/search/${currentUserId}`} className="text-[20px] mt-1 text-black  font-serif h-10 flex items-center pl-4">
-          <button className="w-full text-left">Search</button>
-        </Link>
-        <Link to={`/notification/${currentUserId}`} className="text-[20px] mt-1 text-black  font-serif h-10 flex items-center pl-4">
-          <button className="w-full text-left">Notifications</button>
-        </Link>
-        <Link to={`/achievements/${currentUserId}`} className="text-[20px] mt-1 text-black font-serif h-10 flex items-center pl-4">
-          <button className="w-full text-left">Achievements</button>
-        </Link>
-        <Link to={`/profile/${currentUserId}`} className="text-[20px] mt-1 mb-10 text-black font-serif h-10 flex items-center pl-4">
-          <button className="w-full text-left">Profile</button>
-        </Link>
-        </div>
-  </div>
+        {/* Main Content Area */}
+        <section className="flex-1 overflow-y-auto p-4 md:p-8">
+          <div className="max-w-2xl space-y-6">
+            
+            {/* Header */}
+            <div className="text-left mb-6">
+              <h1 className="text-2xl font-semibold text-gray-900 tracking-tight">Search Users</h1>
+              <p className="text-gray-500 text-sm mt-1">Find and connect with fellow learners on ShareXP.</p>
+            </div>
 
-  {/* Main Content */}
-  <div className="flex-1 overflow-y-auto">
-    {/* page content here */}
-    <div className="flex-1 pl-2 ">
+            {/* Input Box */}
             <input
               type="text"
-              placeholder="Search users..."
+              placeholder="Search by name or username..."
               value={query}
               onChange={handleSearch}
-              className="w-full p-2 mt-10 border rounded-xs focus:outline-none focus:ring-2 focus:ring-blue-500"
+              className="w-full px-4 py-3 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#9e4635] text-sm text-black bg-white/80 backdrop-blur-sm shadow-sm transition-all text-left"
             />
 
             {/* Search Results */}
-            <div className="mt-4">
+            <div className="space-y-2">
               {filteredResults.length > 0 ? (
                 filteredResults.map((user) => (
                   <Link
                     to={`/UserProfile/${user._id}`}
                     key={user._id}
                     onClick={() => handleUserClick(user)}
-                    className="
-                      block
-                      p-2
-                      border-b
-                      text-black
-                      transition-all
-                      duration-200
-                      hover:bg-[#b87047]
-                      hover:[&_*]:text-white
-
-                    "
+                    className="flex items-center gap-3 p-2.5 bg-[#fffaf7] hover:bg-[#fcf5f2] border border-[#edd6cc] rounded-xl transition-all duration-200 text-left cursor-pointer"
                   >
-                    <div className="flex items-center">
-                      {user.profilePicture && (
-                        <img
-                          src={user.profilePicture}
-                          alt={user.username}
-                          className="w-8 h-8 rounded-full mr-2"
-                        />
+                    <img
+                      src={user.profileImage || "https://picsum.photos/100"}
+                      alt={user.username}
+                      className="w-9 h-9 rounded-full object-cover border border-gray-200"
+                      onError={(e) => {
+                        e.target.onerror = null;
+                        e.target.src = "https://picsum.photos/100";
+                      }}
+                    />
+                    <div className="text-left">
+                      <span className="font-semibold text-sm text-gray-900 block">{user.username}</span>
+                      {user.name && (
+                        <span className="text-gray-500 text-xs">{user.name}</span>
                       )}
-
-                      <div>
-                        <span className="font-medium">
-                          {user.username}
-                        </span>
-
-                        {user.name && (
-                          <span className="ml-2 text-gray-600">
-                            ({user.name})
-                          </span>
-                        )}
-                      </div>
                     </div>
                   </Link>
                 ))
               ) : (
                 query && !isLoading && (
-                  <p className="text-gray-500 mt-2">No users found</p>
+                  <p className="text-gray-500 text-sm text-left mt-2">No users found</p>
                 )
               )}
             </div>
 
-
-            {/* Recent User Searches Section */}
-            <div className="mt-1">
-              <div className=" mt-2">
+            {/* Recent Searches */}
+            <div className="pt-6 border-t border-gray-200">
+              <h2 className="text-sm font-semibold text-gray-800 mb-3 text-left">Recent Searches</h2>
+              <div className="flex flex-wrap gap-2">
                 {recentUserSearches.length > 0 ? (
                   recentUserSearches.map((user) => (
                     <Link
                       to={`/UserProfile/${user._id}`}
                       key={user._id}
-                      className="block text-white text-[16px] mb-2 cursor-pointer bg-gradient-to-br
-                        from-[#9e4635]
-                        to-[#d0735e]
-                        transition-transform
-                        transition-shadow
-                        duration-200
-                        ease-out
-                        hover:scale-105
-                        hover:shadow-[0_6px_15px_rgba(0,0,0,0.2)] rounded"
                       onClick={() => handleUserClick(user)}
+                      className="px-3 py-1.5 bg-white hover:bg-[#fcf5f2] text-gray-700 hover:text-[#9e4635] rounded-lg border border-gray-200 text-xs transition-all duration-200 font-medium cursor-pointer"
                     >
-                      {user.username} ({user.name})
+                      {user.username}
                     </Link>
                   ))
                 ) : (
-                  <p className="text-gray-600 text-sm">No recent user searches</p>
+                  <p className="text-gray-500 text-xs text-left">No recent user searches</p>
                 )}
               </div>
             </div>
-          </div>
-  </div>
 
-</div>
-</>
+          </div>
+        </section>
+      </div>
+    </>
     
       // <section>
       //   <div className="m-2 flex w-full bg-white">

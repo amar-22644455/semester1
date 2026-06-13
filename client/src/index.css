@@ -7,7 +7,7 @@
   box-sizing: border-box;
   color-scheme: light dark;
   color: rgba(189, 63, 63, 0.87);
-  background-color: rgb(202, 80, 80);
+  background-color: #f5e6df;
   font-synthesis: none;
   text-rendering: optimizeLegibility;
   -webkit-font-smoothing: antialiased;
@@ -15,40 +15,39 @@
 }
 
 
-a {
-  font-weight: 500;
-  text-decoration: inherit;
+@layer base {
+  a {
+    font-weight: 500;
+    text-decoration: inherit;
+  }
+
+  a:hover {
+    color: #9e4635;
+  }
+
+  body {
+    margin: 0;
+    min-width: 320px;
+    min-height: 100vh;
+    width: 100%;
+    overflow-x: hidden;
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    color: black;
+    background: linear-gradient(180deg, #f7ece7 0%, #f4e1d8 100%);
+    align-items: center;
+    text-align: left;
+  }
+
+  h1 {
+    font-size: 3.2em;
+    line-height: 1.1;
+  }
 }
 
-a:hover {
-  color: grey;
-}
 
-
-body {
-  margin: 0;
-  min-width: 320px;
-  min-height: 100vh;
-  width: 100%;
-  overflow-x: hidden;
-  font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-  color: black;
-  background: white; /* Changed to white background */
-  min-height: 100vh;
-  align-items: center;
-  text-align: center;
-}
-
-
-h1 {
-  font-size: 3.2em;
-  line-height: 1.1;
-}
-
-
-button {
-  background: linear-gradient(135deg, #9e4635, #d0735e);
-  color: rgb(225, 124, 124);
+.btn-legacy {
+  background: linear-gradient(135deg, #9e4635, #d0735e) !important;
+  color: white !important;
   border: none;
   padding: 10px 20px;
   border-radius: 6px;
@@ -56,8 +55,8 @@ button {
   transition: all 0.3s ease;
 }
 
-button:hover {
-  background: linear-gradient(135deg, #8f3a2c, #c96f5c);
+.btn-legacy:hover {
+  background: linear-gradient(135deg, #8f3a2c, #c96f5c) !important;
 }
 
 button:focus,
@@ -103,11 +102,11 @@ button:focus-visible {
     background-color: white;
   }
   a:hover {
-    color: grey;
+    color: #d0735e;
   }
-button {
-  background: linear-gradient(135deg, #9e4635, #d0735e);
-  color: white;
+.btn-legacy {
+  background: linear-gradient(135deg, #9e4635, #d0735e) !important;
+  color: white !important;
   border: none;
   padding: 10px 22px;
   border-radius: 6px;
@@ -115,7 +114,7 @@ button {
   transition: transform 0.2s ease, box-shadow 0.2s ease;
 }
 
-button:hover {
+.btn-legacy:hover {
   transform: scale(1.05);
   box-shadow: 0 6px 15px rgba(0, 0, 0, 0.2);
 }

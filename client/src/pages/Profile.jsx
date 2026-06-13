@@ -1,15 +1,18 @@
 import { useState, useEffect,useRef } from "react";
-import { Link, useParams } from "react-router-dom";
+import { Link, useParams, useNavigate } from "react-router-dom";
 import profile from "@/assets/profile.jpg";
 import PostThumbnail from "@/components/PostThumbnail";
 import ProficiencyThumbnail from "../components/ProficiencyThumbnail";
 import { useAuth } from "@/context/AuthContext";
+import Sidebar from "@/components/Sidebar";
+import { GraduationCap, Award, Camera, Edit3 } from "lucide-react";
 
 
 
 export default function Profile() {
   const [user, setUser] = useState(null);
   const { id } = useParams();
+  const navigate = useNavigate();
   const { logout } = useAuth();
   const [posts, setPosts] = useState([]);
   const currentUserId = localStorage.getItem("userId");
@@ -59,13 +62,17 @@ const mergeSort = (arr) => {
 useEffect(() => {
   const fetchUser = async () => {
     try {
-      const response = await fetch(`http://localhost:5000/api/Profile/${id}`, {
+      const response = await fetch(`/api/Profile/${id}`, {
         method: "GET",
         headers: {
           "Content-Type": "application/json",
-          Authorization: `Bearer ${localStorage.getItem("token")}`,
         },
       });
+
+      if (response.status === 401) {
+        navigate("/LoginXP");
+        return;
+      }
 
       if (!response.ok) throw new Error("Failed to fetch user");
 
@@ -106,11 +113,8 @@ useEffect(() => {
     formData.append('profileImage', file);
   
     try {
-      const response = await fetch(`http://localhost:5000/api/${id}/profile-image`, {
+      const response = await fetch(`/api/${id}/profile-image`, {
         method: "PATCH",
-        headers: {
-          Authorization: `Bearer ${localStorage.getItem("token")}`,
-        },
         body: formData,
       });
   
@@ -133,148 +137,127 @@ useEffect(() => {
 
   return (
     <>
-      <section className="flex h-screen w-full bg-white">
-        {/* Left Sidebar - No changes here */}
-        <div className="flex flex-col w-60 h-screen overflow-hidden">
-          <div className="mt-10 text-[25px] font-serif h-10 flex items-center pl-8">
-            ShareXP
-          </div>
-
-          <div className="flex-1"></div>
-
-            <div className="space-y-3">
-        <Link to={`/home/${currentUserId}`} className="text-[20px] text-black font-serif h-10 flex items-center pl-4">
-          <button className="w-full text-left">Home</button>
-        </Link>
-        <Link to={`/search/${currentUserId}`} className="text-[20px] mt-1 text-black  font-serif h-10 flex items-center pl-4">
-          <button className="w-full text-left">Search</button>
-        </Link>
-        <Link to={`/notification/${currentUserId}`} className="text-[20px] mt-1 text-black  font-serif h-10 flex items-center pl-4">
-          <button className="w-full text-left">Notifications</button>
-        </Link>
-        <Link to={`/achievements/${currentUserId}`} className="text-[20px] mt-1 text-black font-serif h-10 flex items-center pl-4">
-          <button className="w-full text-left">Achievements</button>
-        </Link>
-        <Link to={`/profile/${currentUserId}`} className="text-[20px] mt-1 mb-10 text-black font-serif h-10 flex items-center pl-4">
-          <button className="w-full text-left">Profile</button>
-        </Link>
-        </div>
-        </div>
+      <section className="flex h-screen w-full bg-gradient-to-br from-[#f7ece7] via-[#f4e3da] to-[#ecd0c4]">
+        <Sidebar />
 
         {/* Main Content */}
-        <div className="flex flex-col flex-1">
-          {/* Profile Header - No changes here */}
-          <header className="flex flex-row h-[33vh]">
-            <div className="flex w-1/3 items-center justify-center mt-[72px]">
-              <img 
-                src={user?.profileImage 
-                  ? user.profileImage.startsWith('http') 
-                    ? user.profileImage 
-                    : `http://localhost:5000${user.profileImage}`
-                  : profile} 
-                
-                alt="User Profile" 
-                className="w-40 h-40 rounded-full" 
-                // onError={(e) => {
-                //   e.target.src = "https://picsum.photos/100";
-                // }}
+        <div className="flex flex-col flex-1 overflow-y-auto">
+          {/* Cover Banner */}
+          <div className="mx-6 mt-6 h-28 md:h-36 bg-gradient-to-r from-[#9e4635] to-[#d0735e] relative rounded-t-2xl flex-shrink-0 shadow-sm" />
+
+          {/* Profile Header Card */}
+          <div className="mx-6 px-6 pb-6 relative -mt-10 flex flex-col md:flex-row items-center md:items-end gap-6 border-l border-r border-b border-[#edd6cc] w-[calc(100%-3rem)] bg-[#fffaf7]/40 backdrop-blur-sm rounded-b-2xl flex-shrink-0 shadow-sm">
+            {/* Avatar container */}
+            <div className="relative group flex-shrink-0">
+              {user ? (
+                <img 
+                  src={user.profileImage || profile} 
+                  alt="User Profile" 
+                  className="w-28 h-28 rounded-full object-cover border-4 border-[#fffaf7] shadow-md"
+                />
+              ) : (
+                <div className="w-28 h-28 rounded-full bg-gray-200 border-4 border-[#fffaf7] shadow-md animate-pulse flex items-center justify-center">
+                  <span className="text-gray-400 text-xs font-semibold">...</span>
+                </div>
+              )}
+              <button 
+                onClick={handleEditClick}
+                className="absolute inset-0 bg-black/40 text-white rounded-full flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity border-none cursor-pointer"
+                title="Change Profile Picture"
+              >
+                <Camera className="w-6 h-6" />
+              </button>
+              <input
+                type="file"
+                ref={fileInputRef}
+                onChange={handleFileChange}
+                accept="image/*"
+                style={{ display: 'none' }}
               />
             </div>
 
-            <div className="flex flex-col">
+            {/* User Meta info */}
+            <div className="flex-1 text-center md:text-left">
               {user ? (
                 <>
-                  <div className="flex flex-row h-1/3 ml-5 mt-15">
-                    <div className="flex flex-col">
-                      <p className="text-[15px] text-black font-serif flex items-left">
-                        <Link to="/profile" className="text-left text-[15px]">{user.username}</Link>
-                      </p>
-                      {/* FIXED: Changed from user.posts.length to posts.length for consistency */}
-                      <p className="text-[15px] text-black font-serif flex items-left">
-                        {posts.length} posts
-                      </p>
-                    </div>
-
-                    <div className="flex flex-col ml-5">
-                    <a
+                  <div className="flex flex-col md:flex-row md:items-center gap-3">
+                    <h2 className="text-xl font-bold text-gray-900 m-0">{user.username}</h2>
+                    <div className="flex flex-wrap items-center justify-center md:justify-start gap-2">
+                      <button 
                         onClick={handleEditClick}
-                        className="text-[15px] text-black font-serif flex items-left cursor-pointer"
-                        
+                        className="px-3.5 py-1.5 bg-[#9e4635] text-white hover:bg-[#8f3a2c] rounded-xl font-medium text-xs border-none cursor-pointer transition-colors flex items-center gap-1 shadow-sm"
                       >
-                        Edit
-                      </a>
-                      <input
-                        type="file"
-                        ref={fileInputRef}
-                        onChange={handleFileChange}
-                        accept="image/*"
-                        style={{ display: 'none' }}
-                      />
-                      <Link to="" className="text-[15px] text-black font-serif flex items-left cursor-pointer">
-                        {followersCount || 0} follower
-                      </Link>
-                    </div>
-
-                    <div className="flex flex-col ml-5">
-                      <a onClick={logout} className="text-[15px] text-black font-serif flex items-left cursor-pointer">
-                        Logout
-                      </a>
-                      <Link to="" className="text-[15px] text-black font-serif flex items-left">
-                        {followingCount || 0} following
+                        <Edit3 className="w-3.5 h-3.5" /> Edit Picture
+                      </button>
+                      <Link 
+                        to={`/achievements/${currentUserId}`}
+                        className="px-3.5 py-1.5 bg-[#fffaf7] border border-[#edd6cc] text-[#9e4635] hover:bg-[#fcf5f2] rounded-xl font-medium text-xs transition-all flex items-center gap-1 cursor-pointer"
+                      >
+                        <Award className="w-3.5 h-3.5" /> Proficiencies
                       </Link>
                     </div>
                   </div>
 
-                  
-
-                  <div className="flex flex-row">
-                    <div>
-                      <div className="mt-2">
-                        <p className="text-[15px] w-full text-left text-black font-serif flex items-center ml-5">
-                          {user.name}
-                        </p>
-                      </div>
-
-                      <div className="mt-2">
-                        <p className="text-[15px] w-full text-left text-black font-serif flex items-center ml-5">
-                          {user.institute}
-                        </p>
-                      </div>
-
-                      <div className="mt-2">
-                      <Link to={`/achievements/${currentUserId}`} className="text-[15px] w-full text-left text-black font-serif flex items-center ml-5">Proficiencies</Link>
-                      </div>
-                    </div>
+                  <div className="mt-3 space-y-1">
+                    <p className="text-sm font-semibold text-gray-800 text-left md:text-left m-0">{user.name}</p>
+                    <p className="text-xs text-gray-500 flex items-center justify-center md:justify-start gap-1 m-0">
+                      <GraduationCap className="w-3.5 h-3.5 text-gray-400" /> {user.institute}
+                    </p>
                   </div>
                 </>
               ) : (
-                <p className="text-gray-600 pl-4 mt-5">Loading profile...</p>
+                <p className="text-gray-500 text-sm pl-4">Loading user details...</p>
               )}
             </div>
-          </header>
 
-          <div className="mt-10 flex justify-center font-serif text-xl items-center h-[6vh]">
-            Posts
+            {/* Stats Summary Card */}
+            {user && (
+              <div className="flex gap-6 bg-[#fffaf7]/80 border border-[#edd6cc] rounded-2xl px-5 py-3 shadow-[0_4px_20px_rgba(0,0,0,0.02)] flex-shrink-0">
+                <div className="text-center min-w-12">
+                  <p className="text-base font-bold text-gray-900 m-0">{posts.length}</p>
+                  <p className="text-[10px] text-gray-500 font-medium uppercase tracking-wider m-0">posts</p>
+                </div>
+                <div className="h-8 w-[1px] bg-[#f5e6df] self-center" />
+                <div className="text-center min-w-16">
+                  <p className="text-base font-bold text-gray-900 m-0">{followersCount}</p>
+                  <p className="text-[10px] text-gray-500 font-medium uppercase tracking-wider m-0">followers</p>
+                </div>
+                <div className="h-8 w-[1px] bg-[#f5e6df] self-center" />
+                <div className="text-center min-w-16">
+                  <p className="text-base font-bold text-gray-900 m-0">{followingCount}</p>
+                  <p className="text-[10px] text-gray-500 font-medium uppercase tracking-wider m-0">following</p>
+                </div>
+              </div>
+            )}
           </div>
-          {/* FIXED: Entire posts section rewritten */}
-          {posts.length > 0 ? (
-            <div className="grid grid-cols-3 gap-1 p-1">
-              {/* FIXED: Removed duplicate mapping and extra div wrapper */}
-              {posts.map(post => (
-                <PostThumbnail 
-                  key={post._id}
-                  post={post}
-                  profileFallback={profile}
-                  currentUserId={currentUserId}
-                  onDelete={handlePostDeleted}  // Simplified callback
-                />
-              ))}
+
+          {/* Tab Bar */}
+          <div className="mx-6 mt-6 flex justify-center border-b border-[#edd6cc] bg-[#fffaf7]/20 flex-shrink-0">
+            <div className="px-6 py-3 border-b-2 border-[#9e4635] text-sm font-semibold text-[#9e4635]">
+              Posts ({posts.length})
             </div>
-          ) : (
-            <div className="col-span-3 py-10 text-center text-gray-400">
-              No posts yet
-            </div>
-          )}
+          </div>
+
+          {/* Posts Grid container */}
+          <div className="mx-6 mb-6 p-4 md:p-6 bg-[#fffaf7]/30 border border-[#edd6cc] border-t-0 rounded-b-2xl flex-1">
+            {posts.length > 0 ? (
+              <div className="grid grid-cols-3 gap-2">
+                {posts.map(post => (
+                  <PostThumbnail 
+                    key={post._id}
+                    post={post}
+                    profileFallback={profile}
+                    currentUserId={currentUserId}
+                    onDelete={handlePostDeleted}
+                  />
+                ))}
+              </div>
+            ) : (
+              <div className="py-20 text-center text-gray-500">
+                No posts yet
+              </div>
+            )}
+          </div>
         </div>
       </section>
     </>

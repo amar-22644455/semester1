@@ -18,6 +18,11 @@ router.post("/:userId/achievements",auth, async (req, res) => {
   try {
     const { userId } = req.params;
 
+    // Verify requesting user is the owner of the profile
+    if (req.user.id !== userId) {
+      return res.status(403).json({ message: "Unauthorized to add achievements to this profile" });
+    }
+
     const achievement = new Achievement({
       user: userId,
       title: req.body.title,
@@ -43,9 +48,12 @@ router.delete("/achievements/:achievementId",auth, async (req, res) => {
     if (!achievement) {
       return res.status(404).json({ message: "Achievement not found" });
     }
-    // 🔐 IMPORTANT:
-    // Later you must compare achievement.user with req.user.id
-    // once JWT auth is added
+    
+    // Verify ownership of the achievement before deleting
+    if (achievement.user.toString() !== req.user.id.toString()) {
+      return res.status(403).json({ message: "Not authorized to delete this achievement" });
+    }
+
     await achievement.deleteOne();
     res.json({ success: true });
   } catch (err) {

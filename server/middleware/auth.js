@@ -3,13 +3,29 @@ const User = require('../models/users');
 
 module.exports = async function (req, res, next) {
   try {
-    // Extract token from Authorization header
-    const authHeader = req.headers.authorization;
-    if (!authHeader || !authHeader.startsWith("Bearer ")) {
-      return res.status(401).json({ message: "Unauthorized: No token provided" });
+    let token = null;
+
+    // 1. Try to read token from cookies
+    if (req.headers.cookie) {
+      const cookies = req.headers.cookie.split(';').reduce((acc, c) => {
+        const [k, v] = c.split('=').map(p => p.trim());
+        if (k) acc[k] = v;
+        return acc;
+      }, {});
+      token = cookies.token;
     }
 
-    const token = authHeader.split(" ")[1];
+    // 2. Fallback to Authorization header if cookie not present
+    if (!token && req.headers.authorization && req.headers.authorization.startsWith("Bearer ")) {
+      const authHeaderToken = req.headers.authorization.split(" ")[1];
+      if (authHeaderToken && authHeaderToken !== 'null' && authHeaderToken !== 'undefined') {
+        token = authHeaderToken;
+      }
+    }
+
+    if (!token) {
+      return res.status(401).json({ message: "Unauthorized: No token provided" });
+    }
 
     // Verify the token
     const decoded = jwt.verify(token, process.env.JWT_SECRET);
